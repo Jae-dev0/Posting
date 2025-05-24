@@ -5,6 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import checkFile from 'eslint-plugin-check-file'
 
 export default tseslint.config(
   { ignores: ['dist'] },
@@ -27,6 +28,7 @@ export default tseslint.config(
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       react,
+      'check-file': checkFile,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -42,6 +44,15 @@ export default tseslint.config(
           checksVoidReturn: {
             attributes: false,
           },
+        },
+      ],
+      'check-file/filename-naming-convention': [
+        'error',
+        {
+          '**/*.{ts,tsx}': 'KEBAB_CASE',
+        },
+        {
+          ignoreMiddleExtensions: true,
         },
       ],
     },
