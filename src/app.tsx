@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
+
 import appLogo from '/favicon.svg'
+
+import reactLogo from './assets/react.svg'
 import PWABadge from './pwa-badge.tsx'
 import './App.css'
 
