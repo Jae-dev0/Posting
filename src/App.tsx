@@ -11,7 +11,11 @@ function App() {
     <>
       <div>
         <a href="https://vite.dev" target="_blank">
-          <img src={appLogo} className="logo" alt="react-ts-vite-template logo" />
+          <img
+            src={appLogo}
+            className="logo"
+            alt="react-ts-vite-template logo"
+          />
         </a>
         <a href="https://react.dev" target="_blank">
           <img src={reactLogo} className="logo react" alt="React logo" />
