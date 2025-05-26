@@ -7,6 +7,7 @@ import tseslint from 'typescript-eslint'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import checkFile from 'eslint-plugin-check-file'
 import importPlugin from 'eslint-plugin-import'
+import pluginQuery from '@tanstack/eslint-plugin-query'
 
 export default tseslint.config(
   { ignores: ['dist'] },
@@ -85,5 +86,6 @@ export default tseslint.config(
       ],
     },
   },
+  ...pluginQuery.configs['flat/recommended'],
   eslintPluginPrettierRecommended, // Add the Prettier recommended configuration as the LAST item.
 )
