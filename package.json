@@ -12,6 +12,8 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.77.1",
+    "@tanstack/react-query-devtools": "^5.77.1",
     "axios": "^1.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
+    "@tanstack/eslint-plugin-query": "^5.74.7",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vite-pwa/assets-generator": "^0.2.6",
