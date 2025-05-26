@@ -3,7 +3,6 @@ import { useState } from 'react'
 import appLogo from '/favicon.svg'
 
 import reactLogo from '@/assets/react.svg'
-import { PWABadge } from '@/components/ui/pwa-badge'
 import './landing.css'
 
 export function LandingRoute() {
@@ -36,7 +35,6 @@ export function LandingRoute() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <PWABadge />
     </>
   )
 }
