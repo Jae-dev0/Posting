@@ -2,11 +2,11 @@ import { useState } from 'react'
 
 import appLogo from '/favicon.svg'
 
-import reactLogo from './assets/react.svg'
-import PWABadge from './pwa-badge.tsx'
-import './App.css'
+import reactLogo from '@/assets/react.svg'
+import PWABadge from '@/pwa-badge.tsx'
+import './landing.css'
 
-function App() {
+export function LandingRoute() {
   const [count, setCount] = useState(0)
 
   return (
@@ -29,7 +29,8 @@ function App() {
           count is {count}
         </button>
         <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+          Edit <code>src/app/routes/landing/landing.tsx</code> and save to test
+          HMR
         </p>
       </div>
       <p className="read-the-docs">
@@ -39,5 +40,3 @@ function App() {
     </>
   )
 }
-
-export default App
