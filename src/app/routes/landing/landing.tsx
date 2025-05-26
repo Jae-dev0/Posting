@@ -3,7 +3,7 @@ import { useState } from 'react'
 import appLogo from '/favicon.svg'
 
 import reactLogo from '@/assets/react.svg'
-import PWABadge from '@/pwa-badge.tsx'
+import { PWABadge } from '@/components/ui/pwa-badge'
 import './landing.css'
 
 export function LandingRoute() {
