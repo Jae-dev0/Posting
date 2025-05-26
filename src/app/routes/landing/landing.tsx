@@ -3,6 +3,7 @@ import { useState } from 'react'
 import appLogo from '/favicon.svg'
 
 import reactLogo from '@/assets/react.svg'
+import { Head } from '@/components/seo'
 import './landing.css'
 
 export function LandingRoute() {
@@ -10,6 +11,7 @@ export function LandingRoute() {
 
   return (
     <>
+      <Head title="react-ts-vite-template" />
       <div>
         <a href="https://vite.dev" target="_blank" rel="noreferrer">
           <img
