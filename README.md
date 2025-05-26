@@ -1,50 +1,77 @@
-# React + TypeScript + Vite
+# React Vite Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This template provides a minimal setup to get React working in Vite with HMR (Hot Module Replacement), ESLint configuration, and a production-ready Docker setup. Optional support for VSCode Dev Containers is included for streamlined development.
 
-Currently, two official plugins are available:
+## 🚀 Get Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### ✅ Prerequisites
 
-## Expanding the ESLint configuration
+- **Node.js** v22+
+- **pnpm** (latest stable) – [Install pnpm](https://pnpm.io/installation)
+- **Docker** and **Docker Compose** (for containerized usage)
+- **VSCode** with the Dev Containers extension (optional)
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+---
 
-- Configure the top-level `parserOptions` property like this:
+### 📦 Installation
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+#### Automatically generate a new repository
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Click <a href="https://github.com/jacliner/react-ts-vite-template/generate" target="_blank">here</a> to generate a new repository from this template.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- Select your GitHub username as the owner.
+- Make sure to set the repository visibility to Private (recommended).
+- Clone your generated repository.
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+#### Manual
+
+If automatically generating a new repository does not work, follow these steps instead.
+
+- Click <a href="https://github.com/jacliner/react-ts-vite-template/archive/refs/heads/main.zip">here</a> to download the ZIP archive of the repo.
+- Push your code to the new repository.
+
+---
+
+### 🧪 Commands
+
+##### `pnpm dev`
+
+Runs the app in the development mode.\
+Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
+
+##### `pnpm build`
+
+Builds the app for production to the `dist` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
+
+See the section about [deployment](https://vitejs.dev/guide/static-deploy) for more information.
+
+#### `pnpm run lint`
+
+Runs ESLint to detect code quality and style issues.
+
+#### `pnpm run format`
+
+Automatically format your code using Prettier.
+
+---
+
+### 🧱 Dev Container (VSCode)
+
+If you’re using VSCode Dev Containers:
+
+- Open the project in VSCode.
+- When prompted, Reopen in Container.
+- Your development environment will be bootstrapped with all necessary dependencies.
+
+---
+
+### 🐳 Docker Usage
+
+#### `docker-compose up --build -d`
+
+Builds and starts the app in detached mode.
+
+#### `docker-compose down`
+
+Stop and remove the containers
