@@ -1,4 +1,4 @@
-import Axios, { InternalAxiosRequestConfig } from 'axios'
+import { default as Axios, type InternalAxiosRequestConfig } from 'axios'
 
 import { env } from '@/config/env'
 
