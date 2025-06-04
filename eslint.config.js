@@ -15,6 +15,7 @@ export default tseslint.config(
     extends: [
       js.configs.recommended,
       importPlugin.flatConfigs.recommended,
+      importPlugin.flatConfigs.typescript,
       ...tseslint.configs.recommendedTypeChecked,
     ],
     files: ['**/*.{ts,tsx}'],
