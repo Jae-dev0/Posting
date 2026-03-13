@@ -1,5 +1,5 @@
-import './pwa-badge.css'
-
+import { Button, Card, Stack, Typography } from '@mui/material'
+import { MdNotificationsActive } from 'react-icons/md'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 function PWABadge() {
@@ -29,28 +29,44 @@ function PWABadge() {
   }
 
   return (
-    <div className="PWABadge" role="alert" aria-labelledby="toast-message">
+    <>
       {needRefresh && (
-        <div className="PWABadge-toast">
-          <div className="PWABadge-message">
-            <span id="toast-message">
-              New content available, click on reload button to update.
-            </span>
-          </div>
-          <div className="PWABadge-buttons">
-            <button
-              className="PWABadge-toast-button"
-              onClick={() => updateServiceWorker(true)}
-            >
-              Reload
-            </button>
-            <button className="PWABadge-toast-button" onClick={() => close()}>
-              Close
-            </button>
-          </div>
-        </div>
+        <Card
+          sx={{
+            m: 2,
+            p: 2,
+            right: 0,
+            bottom: 0,
+            position: 'absolute',
+          }}
+        >
+          <Stack spacing={1.5}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <MdNotificationsActive style={{ transform: 'rotate(330deg)' }} />
+              <Typography variant="body2">
+                New content available, click on reload button to update.
+              </Typography>
+            </Stack>
+
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button
+                onClick={() => updateServiceWorker(true)}
+                color="secondary"
+              >
+                Reload
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => close()}
+                sx={{ color: 'text.primary', borderColor: 'border.default' }}
+              >
+                Close
+              </Button>
+            </Stack>
+          </Stack>
+        </Card>
       )}
-    </div>
+    </>
   )
 }
 

@@ -20,13 +20,22 @@
     "*.{md,json,yml,html,css}": "prettier --write"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@fontsource/roboto": "^5.2.10",
+    "@mui/material": "^7.3.9",
+    "@mui/x-date-pickers": "^8.27.2",
     "@tanstack/react-query": "^5.85.5",
     "@tanstack/react-query-devtools": "^5.85.5",
     "axios": "^1.11.0",
+    "dayjs": "^1.11.20",
+    "keycloak-js": "^26.2.3",
+    "material-ui-confirm": "^4.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-error-boundary": "^6.0.0",
     "react-helmet-async": "^2.0.5",
+    "react-icons": "^5.6.0",
     "react-router": "^7.8.1",
     "zod": "^3.25.76"
   },

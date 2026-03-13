@@ -10,7 +10,9 @@ import importPlugin from 'eslint-plugin-import'
 import pluginQuery from '@tanstack/eslint-plugin-query'
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  {
+    ignores: ['node_modules', 'dist', '.pnpm-store', '.husky'],
+  },
   {
     extends: [
       js.configs.recommended,
