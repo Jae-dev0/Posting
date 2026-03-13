@@ -3,6 +3,9 @@ import { z } from 'zod/v4'
 const createEnv = () => {
   const EnvSchema = z.object({
     API_URL: z.string().nonempty(),
+    KEYCLOAK_URL: z.string().nonempty(),
+    KEYCLOAK_REALM: z.string().default('master'),
+    KEYCLOAK_CLIENT_ID: z.string().nonempty(),
   })
 
   const envVars = Object.entries(import.meta.env).reduce<
@@ -20,8 +23,12 @@ const createEnv = () => {
   const parsedEnv = EnvSchema.safeParse(envVars)
 
   if (!parsedEnv.success) {
+    const vars = Object.entries(parsedEnv.error.flatten().fieldErrors)
+      .map(([k, v]) => `- ${k}: ${v.join(', ')}`)
+      .join('\n')
+
     throw new Error(
-      `Invalid env provided. The following variables are missing or invalid:\n${z.prettifyError(parsedEnv.error)}`,
+      `Invalid env provided. The following variables are missing or invalid:\n${vars}`,
     )
   }
 
