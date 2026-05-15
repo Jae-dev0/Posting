@@ -1,0 +1,162 @@
+---
+description: Patterns for accessing environment variables and defining route paths. Enforces use of the centralized config layer over raw env access.
+alwaysApply: true
+---
+
+# Config Patterns
+
+**When to apply**: When accessing environment variables, constructing URLs, or adding new env vars / routes.
+
+---
+
+## Environment Variables
+
+**NEVER access raw env values directly.** Always use a centralized, validated config object so that missing or malformed variables are caught at startup with a clear error, not silently at runtime.
+
+```ts
+// ✅ Good — type-safe, validated at startup
+import { env } from '@/config/env'
+
+const apiUrl = env.API_URL
+
+// ❌ Bad — bypasses validation, no type safety, fails silently
+const apiUrl = import.meta.env.VITE_APP_API_URL
+const apiUrl = process.env.API_URL
+```
+
+### Implementation by build tool / framework
+
+> Use the section that matches your project.
+
+#### Vite (this repo's implementation)
+
+Variables must be prefixed `VITE_APP_`. The centralized `env` object uses `createEnv()` to validate them with Zod and strip the prefix automatically:
+
+1. Add to `.env`:
+   ```
+   VITE_APP_MY_VAR=value
+   ```
+2. Add to the Zod schema in `src/config/env.ts`:
+   ```ts
+   const EnvSchema = z.object({
+     API_URL: z.string().nonempty(),
+     MY_VAR: z.string().nonempty(), // accessed as env.MY_VAR
+   })
+   ```
+3. Access via `env.MY_VAR` — never raw.
+
+#### Next.js
+
+Use `NEXT_PUBLIC_` prefix for client-side variables, and a validated config module:
+
+```ts
+// src/config/env.ts
+import { z } from 'zod'
+
+const EnvSchema = z.object({
+  API_URL: z.string().url(),
+})
+
+export const env = EnvSchema.parse({
+  API_URL: process.env.NEXT_PUBLIC_API_URL,
+})
+```
+
+#### Node.js / other backends
+
+```ts
+// src/config/env.ts
+import { z } from 'zod'
+
+const EnvSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  PORT: z.coerce.number().default(3000),
+})
+
+export const env = EnvSchema.parse(process.env)
+```
+
+### Principle (framework-agnostic)
+
+Regardless of the framework, the pattern is the same:
+1. Define a Zod schema that declares every required variable
+2. Parse and validate once at startup — throw immediately if anything is missing
+3. Export the validated, typed object; import it everywhere instead of reading raw env
+
+---
+
+## Route Paths
+
+**Never hardcode URL strings.** Maintain a single source of truth for all route paths so that renaming a route is a one-file change and callers get a type error if the route no longer exists.
+
+```ts
+// ✅ Good — typesafe, single source of truth
+import { paths } from '@/config/paths'
+
+<Link to={paths.items.getHref()} />
+navigate(paths.auth.login.getHref(redirectTo))
+
+// ❌ Bad — hardcoded strings break silently when routes change
+<Link to="/items" />
+navigate(`/auth/login?redirectTo=${redirectTo}`)
+```
+
+### Implementation by routing strategy
+
+> Use the section that matches your project.
+
+#### react-router / any client-side router (this repo)
+
+Define a `paths` object with `path` (for `<Route>`) and `getHref()` (for navigation):
+
+```ts
+// src/config/paths.ts
+export const paths = {
+  // Simple route
+  items: {
+    path: '/items',
+    getHref: () => '/items',
+  },
+  // Route with params
+  item: {
+    path: '/items/:id',
+    getHref: (id: string) => `/items/${id}`,
+  },
+  // Route with optional query param
+  auth: {
+    login: {
+      path: '/auth/login',
+      getHref: (redirectTo?: string) =>
+        redirectTo ? `/auth/login?redirectTo=${redirectTo}` : '/auth/login',
+    },
+  },
+} as const
+```
+
+- `path` → used in `<Route path={...} />` definitions
+- `getHref()` → used everywhere a URL string is needed (`<Link>`, `navigate()`, etc.)
+- `as const` is required for type inference
+
+#### Next.js (App Router / Pages Router)
+
+Routes are file-based, so instead of a `paths` object, create helper functions:
+
+```ts
+// src/config/paths.ts
+export const paths = {
+  items: {
+    getHref: () => '/items',
+  },
+  item: {
+    getHref: (id: string) => `/items/${id}`,
+  },
+} as const
+```
+
+Use `<Link href={paths.item.getHref(id)}>` instead of `<Link href={`/items/${id}`}>`.
+
+### Principle (router-agnostic)
+
+1. Define all routes in one file — never scatter raw strings across components
+2. Use `getHref()` functions at every call site so refactoring is a single-file change
+3. Never build URL strings inline with template literals

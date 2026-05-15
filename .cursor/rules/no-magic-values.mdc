@@ -1,0 +1,108 @@
+---
+description: Enforce naming magic values and inline calculations with readable, intent-expressing variable names.
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# No Magic Values
+
+Any inline literal or calculation whose meaning is not immediately obvious must be extracted into a named variable. The name must express **what the value represents**, not how it is computed.
+
+Scope does not matter — a local `const` inside a function body is perfectly fine. The only requirement is that a reader can understand the value's purpose without having to decode it.
+
+```ts
+// ❌ Bad — reader has to decode what 2.5 means
+sx={{ fontSize: size / 2.5 }}
+
+// ✅ Good — name communicates intent
+const initialsFontSize = size / 2.5
+sx={{ fontSize: initialsFontSize }}
+```
+
+```ts
+// ❌ Bad — inline arithmetic with no context
+setTimeout(fn, 1000 * 60 * 5)
+
+// ✅ Good
+const fiveMinutesMs = 1000 * 60 * 5
+setTimeout(fn, fiveMinutesMs)
+```
+
+```ts
+// ❌ Bad — what does 0.85 mean?
+const discounted = price * 0.85
+
+// ✅ Good
+const discountMultiplier = 0.85
+const discounted = price * discountMultiplier
+```
+
+## What counts as a magic value
+
+- Numeric literals used in calculations (e.g. `/ 2.5`, `* 0.85`, `+ 16`)
+- Inline expressions whose result is not self-evident from context
+- String literals used as identifiers or keys (e.g. `'admin'`, `'px'`)
+- Positional boolean arguments where the meaning is invisible at the call site
+- Array indices that carry implicit domain meaning
+- Style values (z-index, opacity, spacing) that have a specific intent
+- Any literal that appears in more than one place
+
+## Recommended patterns
+
+### Magic boolean arguments
+
+```ts
+// ❌ Avoid — positional booleans are invisible at the call site
+renderComponent(data, true, false)
+
+// ✅ Recommended
+const includeHeader = true
+const skipValidation = false
+renderComponent(data, includeHeader, skipValidation)
+```
+
+### Magic string literals (role/status/type values)
+
+```ts
+// ❌ Avoid
+if (user.role === 'admin') { ... }
+
+// ✅ Recommended
+const ADMIN_ROLE = 'admin'
+if (user.role === ADMIN_ROLE) { ... }
+```
+
+### Magic array indices
+
+```ts
+// ❌ Avoid
+const city = address.split(',')[2]
+
+// ✅ Recommended
+const CITY_INDEX = 2
+const city = address.split(',')[CITY_INDEX]
+```
+
+### Magic style values (z-index, opacity, etc.)
+
+```ts
+// ❌ Avoid
+sx={{ zIndex: 1300, opacity: 0.6 }}
+
+// ✅ Recommended
+const MODAL_Z_INDEX = 1300
+const OVERLAY_OPACITY = 0.6
+sx={{ zIndex: MODAL_Z_INDEX, opacity: OVERLAY_OPACITY }}
+```
+
+### Repeated identical literals
+
+Any magic value that appears in more than one place must be named — a future change otherwise requires hunting down every occurrence.
+
+## Exceptions
+
+Universally understood values do not need extraction:
+
+- `0`, `1`, `-1` in arithmetic or comparisons
+- `100` in percentage calculations (`/ 100`)
+- `true` / `false` as standalone assignments (not as positional arguments)

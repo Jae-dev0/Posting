@@ -1,0 +1,58 @@
+---
+description: Destructure object props, parameters, and variables in-body when 3+ properties are accessed, to shorten lines and improve readability.
+alwaysApply: true
+---
+
+# Destructure Single-Object Props
+
+**When to apply**: A function or component accesses 3+ properties of the same object (prop, parameter, or local variable) in its body, with no naming collisions in scope.
+
+## Forbidden Pattern
+
+```tsx
+// ❌ Bad — repeated `maintenanceLog.` on every line; hard to scan
+const DetailsContent = ({ maintenanceLog }: Props) => {
+  return (
+    <Grid>
+      <Value value={maintenanceLog.fleet ? maintenanceLog.fleet.name : 'Unknown'} />
+      <Value value={maintenanceLog.service_date ? formatDate(maintenanceLog.service_date) : 'N/A'} />
+      <Value value={maintenanceLog.cost ? maintenanceLog.cost.toLocaleString() : 'N/A'} />
+      <Value value={maintenanceLog.service_provider ?? 'N/A'} />
+    </Grid>
+  )
+}
+```
+
+## Required Pattern
+
+Destructure at the top of the function body, then use the short names throughout:
+
+```tsx
+// ✅ Good — destructure once, use short names everywhere
+const DetailsContent = ({ maintenanceLog }: Props) => {
+  const { fleet, service_date, cost, service_provider } = maintenanceLog
+
+  return (
+    <Grid>
+      <Value value={fleet ? fleet.name : 'Unknown'} />
+      <Value value={service_date ? formatDate(service_date) : 'N/A'} />
+      <Value value={cost ? cost.toLocaleString() : 'N/A'} />
+      <Value value={service_provider ?? 'N/A'} />
+    </Grid>
+  )
+}
+```
+
+## Key Rules
+
+- Destructure when **3+ properties** of the same object are accessed in the body
+- Place the destructuring **at the top** of the function body, before any logic or JSX
+- Only destructure fields that are **actually used** — no speculative destructuring
+- Keep the original name in the **function signature** for type clarity; destructure in the body, not the parameter list
+- **Skip** destructuring when there is a naming collision with other variables already in scope
+
+## Exceptions
+
+- `.map()` / `.filter()` callbacks with **1–2 property accesses** — inline dot access is fine
+- When the object name provides **important disambiguation** (e.g., `source.name` vs `target.name` where both are in scope)
+- Spread patterns where the rest object is also needed: `const { id, ...rest } = item` is already destructuring — continue the same block

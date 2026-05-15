@@ -8,7 +8,7 @@ WORKDIR /app
 COPY .npmrc .
 
 # Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json pnpm-workspace.yaml yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN --mount=type=secret,id=npm-token \
   printf '\n//npm.pkg.github.com/:_authToken=%s\n' "$(cat /run/secrets/npm-token | tr -d '\n')" >> .npmrc && \
   if [ -f yarn.lock ]; then yarn --frozen-lockfile; \

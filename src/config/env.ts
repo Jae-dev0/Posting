@@ -6,6 +6,17 @@ const createEnv = () => {
     KEYCLOAK_URL: z.string().nonempty(),
     KEYCLOAK_REALM: z.string().default('master'),
     KEYCLOAK_CLIENT_ID: z.string().nonempty(),
+
+    AUTH_BYPASS: z
+      .string()
+      .default('false')
+      .transform((v) => v === 'true' && import.meta.env.DEV),
+
+    /**
+     * Client idle logout (minutes). Set via `VITE_APP_SESSION_IDLE_LOGOUT_MINUTES`.
+     * 0 = disabled (SSO / Keycloak session rules still apply).
+     */
+    SESSION_IDLE_LOGOUT_MINUTES: z.coerce.number().min(0).default(10),
   })
 
   const envVars = Object.entries(import.meta.env).reduce<

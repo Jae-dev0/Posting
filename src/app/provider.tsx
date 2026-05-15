@@ -6,7 +6,12 @@ import { HelmetProvider } from 'react-helmet-async'
 
 import { MainErrorFallback } from '@/components/errors'
 import { PWABadge } from '@/components/ui'
-import { keycloak as keycloakClient, KeycloakProvider } from '@/lib/keycloak'
+import { env } from '@/config/env'
+import {
+  DevKeycloakProvider,
+  keycloak as keycloakClient,
+  KeycloakProvider,
+} from '@/lib/keycloak'
 import { MuiProvider } from '@/lib/mui'
 import { queryConfig } from '@/lib/react-query'
 import '@fontsource/roboto/300.css'
@@ -21,6 +26,23 @@ const queryClient = new QueryClient({
 export interface AppProviderProps {
   children: ReactNode
 }
+function AuthProvider({ children }: { children: ReactNode }) {
+  if (env.AUTH_BYPASS) {
+    return <DevKeycloakProvider>{children}</DevKeycloakProvider>
+  }
+
+  return (
+    <KeycloakProvider
+      client={keycloakClient}
+      onLoad="check-sso"
+      scope="openid profile email company"
+      silentCheckSsoRedirectUri={`${location.origin}/silent-check-sso.html`}
+      checkLoginIframe={false}
+    >
+      {children}
+    </KeycloakProvider>
+  )
+}
 
 export function AppProvider({ children }: AppProviderProps) {
   return (
@@ -28,15 +50,7 @@ export function AppProvider({ children }: AppProviderProps) {
       <HelmetProvider>
         <MuiProvider>
           <QueryClientProvider client={queryClient}>
-            <KeycloakProvider
-              client={keycloakClient}
-              onLoad="check-sso"
-              scope="openid profile email company fis-api"
-              silentCheckSsoRedirectUri={`${location.origin}/silent-check-sso.html`}
-              checkLoginIframe={false}
-            >
-              {children}
-            </KeycloakProvider>
+            <AuthProvider>{children}</AuthProvider>
             <ReactQueryDevtools initialIsOpen={false} />
             <PWABadge />
           </QueryClientProvider>

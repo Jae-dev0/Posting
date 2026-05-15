@@ -3,6 +3,20 @@ import { useContext } from 'react'
 import { KeycloakContext } from './context'
 import { tokenParsedSchema } from './schema'
 
+export type KeycloakAuthUser = {
+  id: string
+  username: string
+  fullname: string
+  firstName: string
+  lastName: string
+  email: string
+  company: {
+    employeeNumber: string
+    companyPrimaryId: number
+    companyActiveId: number
+  }
+}
+
 export function useKeycloak() {
   const context = useContext(KeycloakContext)
 
@@ -19,21 +33,17 @@ export function useKeycloakAuth() {
   const { keycloak, isAuthenticated, token } = useKeycloak()
 
   if (!isAuthenticated || !token?.isValid) {
-    throw new Error(
-      'useKeycloakAuth hook must be used inside KeycloakProvider context and authenticated state',
-    )
+    return [null, { keycloak }] as const
   }
 
   const tokenParsed = tokenParsedSchema.safeParse(keycloak.tokenParsed)
   if (!tokenParsed.success) {
-    throw new Error(
-      'useKeycloakAuth hook must be used inside KeycloakProvider context and authenticated state',
-    )
+    return [null, { keycloak }] as const
   }
 
   const data = tokenParsed.data
 
-  const user = {
+  const user: KeycloakAuthUser = {
     id: data.sub,
     username: data.preferred_username,
     fullname: data.name,

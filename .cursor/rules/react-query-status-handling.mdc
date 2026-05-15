@@ -1,0 +1,49 @@
+---
+description: Enforce explicit handling of all React Query status states
+globs: **/*.{ts,tsx}
+alwaysApply: true
+---
+
+# React Query Status Handling
+
+Every component that consumes a `useQuery` hook must explicitly handle all three states: `pending`, `error`, and `success`. Never use a ternary fallback that silently swallows loading and error states.
+
+## Forbidden Pattern
+
+```tsx
+// ❌ Bad — pending and error are silently ignored; user sees empty content
+const { data: res, status } = useItems()
+const data = status === 'success' ? res.data : []
+const total = status === 'success' ? res.meta.total : 0
+
+return <ItemList data={data} />
+```
+
+## Required Pattern
+
+```tsx
+// ✅ Good — every state is explicitly handled inside a consistent root structure
+const { data: res, status, error } = useItems()
+
+const renderContent = () => {
+  if (status === 'pending') return <LoadingSkeleton />
+  if (status === 'error') return <ErrorMessage message={error.message} />
+
+  return <ItemList data={res.data} />
+}
+
+// Replace the root container with whatever your design system provides
+// (e.g. <Card> in MUI, <Box> in Chakra, <div> for plain HTML)
+return (
+  <section>
+    <h2>Items</h2>
+    <div>{renderContent()}</div>
+  </section>
+)
+```
+
+## Key Rules
+
+1. Handle `pending`, `error`, and `success` explicitly — no implicit fallbacks
+2. `status === 'success' ? value : fallback` is forbidden — it hides loading and error states from the user
+3. Always destructure `error` alongside `status` so it is available in the error branch

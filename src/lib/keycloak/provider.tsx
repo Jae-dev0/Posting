@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 
 import { KeycloakContext, type TokenState } from './context'
 import { validateTokenParsed } from './schema'
+import { useSessionLifecycle } from './use-session-lifecycle'
 
 export type KeycloakProviderProps = {
   client: Keycloak
@@ -28,6 +29,13 @@ export function KeycloakProvider({
   const [token, setToken] = useState<TokenState | null>(null)
 
   const initialized = useRef(false)
+
+  useSessionLifecycle({
+    client,
+    enabled: isAuthenticated && !isPending,
+    setIsAuthenticated,
+    setToken,
+  })
 
   useEffect(() => {
     if (initialized.current) return

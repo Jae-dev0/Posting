@@ -1,0 +1,139 @@
+---
+description: Patterns for creating React Query hooks that fetch data from an API endpoint, including Zod validation, extracted queryFn, and options passthrough.
+alwaysApply: true
+---
+
+# API Query Hook Patterns
+
+**When to apply**: When creating a React Query `useQuery` hook that fetches data from an API endpoint.
+
+## Full Pattern
+
+> **Adapt to your project**: Replace the import paths and HTTP client below with your project's equivalents.
+> The structural rules (Zod schema, extracted `queryFn`, options passthrough, signal forwarding) apply regardless of HTTP client.
+
+### With Axios
+
+```ts
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import type { AxiosRequestConfig } from 'axios'
+import { z } from 'zod'
+
+// Replace with your project's API client and query-key module paths
+import { itemsApi } from '@/lib/api-client'
+import { itemKeys } from '@/features/items/api/query-keys'
+
+// 1. Define Zod schema co-located with the hook
+export const itemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+})
+
+// 2. Infer types from schema -- no manual type duplication
+export type Item = z.infer<typeof itemSchema>
+
+// 3. Extract queryFn as a standalone const above the hook
+const queryFn = async (
+  options: { axios?: AxiosRequestConfig } = {},
+): Promise<Item> => {
+  const res = await itemsApi.getItem(options.axios)
+  return itemSchema.parse(res.data) // runtime validation
+}
+
+// 4. Hook with options passthrough
+export const useItem = (options?: {
+  query?: Omit<UseQueryOptions<Item>, 'queryKey' | 'queryFn'>
+  axios?: AxiosRequestConfig
+}) => {
+  return useQuery({
+    ...options?.query,                            // spread user options FIRST
+    queryKey: itemKeys.detail(),                  // then queryKey -- cannot be overridden
+    queryFn: ({ signal }) => queryFn({ axios: { signal, ...options?.axios } }),
+  })
+}
+```
+
+### With `fetch` (no Axios)
+
+```ts
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import { z } from 'zod'
+
+import { itemKeys } from '@/features/items/api/query-keys'
+
+export const itemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+})
+
+export type Item = z.infer<typeof itemSchema>
+
+const queryFn = async ({ signal }: { signal?: AbortSignal } = {}): Promise<Item> => {
+  const res = await fetch('/api/items', { signal })
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+  return itemSchema.parse(await res.json())
+}
+
+export const useItem = (options?: {
+  query?: Omit<UseQueryOptions<Item>, 'queryKey' | 'queryFn'>
+}) => {
+  return useQuery({
+    ...options?.query,
+    queryKey: itemKeys.detail(),
+    queryFn: ({ signal }) => queryFn({ signal }),
+  })
+}
+```
+
+## Key Rules
+
+- **Zod schema in the hook file**: Define schema and inferred types in the same file as the hook
+- **Always `schema.parse(res.data)`**: Validate API responses at runtime -- never trust raw response types
+- **Extract `queryFn`**: Always a standalone `const` above the hook, not inline in `useQuery`
+- **Centralized query keys**: Always import from the feature's query-keys module -- never define query keys inline
+- **Spread order matters**: `...options?.query` first, then `queryKey` and `queryFn` so they cannot be overridden by callers
+- **Signal forwarding**: Always pass `signal` from the `queryFn` context into the HTTP request for cancellation support
+
+## Filters / Paginated Queries
+
+For queries with filters, default to `{}` so the hook is always callable without arguments:
+
+```ts
+export const useItems = (
+  filters: ListItemsRequest = {},
+  options?: { query?: Omit<UseQueryOptions<Item[]>, 'queryKey' | 'queryFn'> },
+) => {
+  return useQuery({
+    ...options?.query,
+    queryKey: itemKeys.list(filters),
+    queryFn: ({ signal }) => queryFn(filters, { signal }),
+  })
+}
+```
+
+## Query Key Factory
+
+Each feature should have a centralized `query-keys.ts` file:
+
+```ts
+// src/features/items/api/query-keys.ts
+export const itemKeys = {
+  all: ['items'] as const,
+  lists: () => [...itemKeys.all, 'list'] as const,
+  list: (filters: object) => [...itemKeys.lists(), filters] as const,
+  details: () => [...itemKeys.all, 'detail'] as const,
+  detail: (id: string | number) => [...itemKeys.details(), id] as const,
+}
+```
+
+## Barrel Exports
+
+Every `api/` directory must have an `index.ts` that re-exports all hooks:
+
+```ts
+// api/index.ts
+export * from './query-keys'
+export * from './use-item'
+export * from './use-items'
+export * from './use-create-item'
+```

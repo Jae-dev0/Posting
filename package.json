@@ -2,6 +2,10 @@
   "name": "react-ts-vite-template",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -65,9 +69,5 @@
     "vite-plugin-pwa": "^0.21.2",
     "workbox-core": "^7.3.0",
     "workbox-window": "^7.3.0"
-  },
-  "resolutions": {
-    "sharp": "0.32.6",
-    "sharp-ico": "0.1.5"
   }
 }

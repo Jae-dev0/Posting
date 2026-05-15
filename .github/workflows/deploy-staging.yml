@@ -1,0 +1,54 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Staging
+    runs-on: [self-hosted, Linux, X64, staging]
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          clean: true
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          DOCKER_APP_PORT=${{ vars.DOCKER_APP_PORT }}
+          VITE_APP_API_URL=${{ vars.VITE_APP_API_URL }}
+          VITE_APP_KEYCLOAK_URL=${{ vars.VITE_APP_KEYCLOAK_URL }}
+          VITE_APP_KEYCLOAK_REALM=${{ vars.VITE_APP_KEYCLOAK_REALM }}
+          VITE_APP_KEYCLOAK_CLIENT_ID=${{ vars.VITE_APP_KEYCLOAK_CLIENT_ID }}
+          EOF
+
+      - name: Create NPM Token File
+        run: |
+          mkdir -p docker/node          
+          echo "${{ secrets.GITHUB_TOKEN }}" > docker/node/npm-token.txt
+
+      - name: Deploy with Docker Compose
+        run: |
+          docker compose up -d --build --remove-orphans --wait
+
+      - name: Check deployment status
+        run: |
+          echo "Deployment completed successfully"
+          docker compose ps
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: rm -f docker/node/npm-token.txt

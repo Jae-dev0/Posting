@@ -1,0 +1,79 @@
+---
+description: Patterns for creating reusable custom React hooks.
+alwaysApply: true
+---
+
+# Custom Hook Patterns
+
+**When to apply**: When creating a custom React hook intended for reuse across components or features.
+
+## File Naming
+
+Use `kebab-case` for all hook files:
+
+```
+✅ use-disclosure.ts
+✅ use-staged-files.ts
+
+❌ useDisclosure.ts
+❌ UseDisclosure.ts
+```
+
+## Structure
+
+- Define state with `useState`
+- Wrap all returned handler functions in `useCallback` for stable references
+- Return a plain object with state and handlers
+
+```ts
+// ✅ Good
+import { useCallback, useState } from 'react'
+
+export const useDisclosure = (initial = false) => {
+  const [isOpen, setIsOpen] = useState(initial)
+
+  const open = useCallback(() => setIsOpen(true), [])
+  const close = useCallback(() => setIsOpen(false), [])
+  const toggle = useCallback(() => setIsOpen((s) => !s), [])
+
+  return { isOpen, open, close, toggle }
+}
+```
+
+```ts
+// ❌ Bad — inline arrow functions create new references on every render
+export const useDisclosure = (initial = false) => {
+  const [isOpen, setIsOpen] = useState(initial)
+
+  return {
+    isOpen,
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false),
+  }
+}
+```
+
+## Exports
+
+Named export only -- no default exports:
+
+```ts
+// ✅ Good
+export const useDisclosure = (...) => { ... }
+
+// ❌ Bad
+export default function useDisclosure() { ... }
+```
+
+## Keep Hooks Single-Purpose
+
+Each hook should solve one problem. If a hook grows to manage unrelated concerns, split it.
+
+```ts
+// ✅ Good — one concern per hook
+const { isOpen, open, close } = useDisclosure()
+const [files, addFile, removeFile] = useStagedFiles()
+
+// ❌ Bad — mixing unrelated concerns in one hook
+const { isOpen, open, close, files, addFile } = useModalWithFiles()
+```
