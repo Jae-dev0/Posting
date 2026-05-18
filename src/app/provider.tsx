@@ -14,10 +14,6 @@ import {
 } from '@/lib/keycloak'
 import { MuiProvider } from '@/lib/mui'
 import { queryConfig } from '@/lib/react-query'
-import '@fontsource/roboto/300.css'
-import '@fontsource/roboto/400.css'
-import '@fontsource/roboto/500.css'
-import '@fontsource/roboto/700.css'
 
 const queryClient = new QueryClient({
   defaultOptions: queryConfig,

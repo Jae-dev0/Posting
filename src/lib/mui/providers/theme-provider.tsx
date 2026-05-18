@@ -10,6 +10,10 @@ import { ReactNode, useCallback, useMemo, useState } from 'react'
 import { darkTheme } from '../theme/dark-theme'
 import { lightTheme } from '../theme/light-theme'
 import { ThemeContext, ThemeMode } from '../theme-context'
+import '@fontsource/dm-sans/300.css'
+import '@fontsource/dm-sans/400.css'
+import '@fontsource/dm-sans/500.css'
+import '@fontsource/dm-sans/700.css'
 
 const inputGlobalStyles = (
   <GlobalStyles
