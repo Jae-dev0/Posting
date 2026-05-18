@@ -29,12 +29,22 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    // settings: {
+    //   react: { version: '19.0' },
+    //   'import/resolver': {
+    //     // You will also need to install and configure the TypeScript resolver
+    //     // See also https://github.com/import-js/eslint-import-resolver-typescript#configuration
+    //     typescript: true,
+    //     node: true,
+    //   },
+    // },
     settings: {
       react: { version: '19.0' },
       'import/resolver': {
-        // You will also need to install and configure the TypeScript resolver
-        // See also https://github.com/import-js/eslint-import-resolver-typescript#configuration
-        typescript: true,
+        typescript: {
+          alwaysTryTypes: true, // Forces ESLint to check for types using standard resolution
+          project: './tsconfig.json', // Points directly to your TS config instead of guessing
+        },
         node: true,
       },
     },
