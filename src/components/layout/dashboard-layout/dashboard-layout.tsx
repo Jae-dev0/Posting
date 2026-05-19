@@ -1,7 +1,7 @@
 import {
   AppBar,
+  Box,
   Button,
-  Divider,
   Grid,
   Link,
   Stack,
@@ -13,7 +13,8 @@ import { ReactNode, useEffect } from 'react'
 import { LuLogOut } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router'
 
-import { UserMenu, UserMenuData } from '@/components/ui'
+import jacLinerLogo from '@/assets/jac-liner-logo.svg'
+import { NotificationMenu, UserMenu, UserMenuData } from '@/components/ui'
 import { paths } from '@/config/paths'
 import { useDisclosure } from '@/hooks/use-disclosure'
 
@@ -59,46 +60,42 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
           bgcolor: theme.palette.background.paper,
         })}
       >
-        <Toolbar sx={{ '&.MuiToolbar-gutters': { px: 2 } }}>
+        <Toolbar sx={{ '&.MuiToolbar-gutters': { px: 3 } }}>
           <Grid container width="100%">
             <Grid
               direction="row"
               component={Stack}
               alignItems="start"
               justifyContent="center"
-              size={{ xs: 4, md: 4, lg: 4 }}
+              size={{ xs: 6, md: 6, lg: 6 }}
             >
               <Stack direction="row" spacing={2}>
-                <Stack
-                  spacing={2.5}
-                  direction="row"
-                  alignItems="center"
-                  divider={
-                    <Divider orientation="vertical" sx={{ height: 16 }} />
-                  }
-                >
+                <Stack spacing={2.5} direction="row" alignItems="center">
                   <Link
                     underline="none"
                     component={RouterLink}
                     to={paths.home.getHref()}
                   >
-                    <Typography variant="h5" fontWeight={600}>
-                      TEMPLATE
+                    <Typography
+                      variant="h6"
+                      component={Box}
+                      fontWeight={600}
+                      sx={{
+                        padding: '0px 8px',
+                        borderRadius: '8px',
+                        textTransform: 'uppercase',
+                        border: '1px solid #CDD7E1',
+                      }}
+                    >
+                      Template Management System
                     </Typography>
                   </Link>
+                  <img src={jacLinerLogo} alt="FMS" height={20} />
                 </Stack>
               </Stack>
             </Grid>
-            <Grid
-              direction="row"
-              component={Stack}
-              alignItems="center"
-              justifyContent="center"
-              size={{ xs: 4, md: 4, lg: 4 }}
-            >
-              {/* <EmployeeSearchMenu /> */}
-            </Grid>
-            <Grid size={{ xs: 4, md: 4, lg: 4 }}>
+
+            <Grid size={{ xs: 6, md: 6, lg: 6 }}>
               <Stack
                 spacing={1}
                 direction="row"
@@ -106,6 +103,7 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                 alignContent="center"
                 justifyContent="flex-end"
               >
+                <NotificationMenu />
                 <UserMenu
                   user={user}
                   employeeNumber={user?.company.employeeNumber}
@@ -123,16 +121,26 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                     </Button>
                   }
                 />
+                <Box>
+                  <Typography variant="body1" fontWeight={600} component={Box}>
+                    {user?.firstName} {user?.lastName}
+                  </Typography>
+                  <Typography variant="body2" component={Box}>
+                    Position
+                  </Typography>
+                </Box>
               </Stack>
             </Grid>
           </Grid>
         </Toolbar>
-        {navItems}
+        <Box sx={{ border: '1px solid', borderColor: 'divider' }}>
+          {navItems}
+        </Box>
       </AppBar>
 
       <Stack direction="row">
         <ContentContainer>
-          <Toolbar sx={{ mb: 9 }} />
+          <Toolbar sx={{ mb: 5 }} />
           {children}
         </ContentContainer>
       </Stack>

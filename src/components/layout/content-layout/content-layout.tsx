@@ -13,7 +13,7 @@ export function ContentLayout({ children, title = '' }: ContentLayoutProps) {
     <>
       <Head title={title} />
       <Box sx={{ p: 3 }}>
-        <Stack spacing={3}>{children}</Stack>
+        <Stack spacing={2}>{children}</Stack>
       </Box>
     </>
   )
