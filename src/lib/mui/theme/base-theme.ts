@@ -5,13 +5,17 @@ const theme = {
     borderRadius: 12,
     listItemBorderRadius: 4,
   },
-  typography: {
-    fontWeightMedium: 500,
-    buttonTextTransform: 'capitalize' as const,
-  },
 }
 
 export const baseTheme: ThemeOptions = {
+  typography: {
+    fontFamily:
+      '"DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+    fontWeightLight: 300,
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
+    fontWeightBold: 700,
+  },
   components: {
     MuiAppBar: {
       defaultProps: {
@@ -31,7 +35,7 @@ export const baseTheme: ThemeOptions = {
       },
       styleOverrides: {
         root: {
-          textTransform: theme.typography.buttonTextTransform,
+          textTransform: 'capitalize',
         },
       },
     },
@@ -48,7 +52,7 @@ export const baseTheme: ThemeOptions = {
     MuiFormLabel: {
       styleOverrides: {
         root: {
-          fontWeight: theme.typography.fontWeightMedium,
+          fontWeight: 500,
         },
       },
     },
