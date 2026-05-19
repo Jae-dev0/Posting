@@ -11,6 +11,8 @@ import {
   useKeycloak,
 } from '@/lib/keycloak'
 
+const projectName = 'Template MS'
+
 export const Login = () => {
   const yearNow = new Date().getFullYear()
   const { keycloak } = useKeycloak()
@@ -23,8 +25,6 @@ export const Login = () => {
     }
     return value
   })
-
-  const projectName = 'TEMPLATE'
 
   return (
     <ContentLayout title="Login">
