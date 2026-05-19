@@ -22,6 +22,7 @@ const queryClient = new QueryClient({
 export interface AppProviderProps {
   children: ReactNode
 }
+
 function AuthProvider({ children }: { children: ReactNode }) {
   if (env.AUTH_BYPASS) {
     return <DevKeycloakProvider>{children}</DevKeycloakProvider>

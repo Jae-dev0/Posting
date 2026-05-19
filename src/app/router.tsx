@@ -10,7 +10,11 @@ import {
 import { CenterLayout, PublicLayout } from '@/components/layout'
 import { PageNotFound } from '@/components/ui/page-not-found'
 import { paths } from '@/config/paths'
-import { useKeycloak } from '@/lib/keycloak'
+import {
+  AUTH_ERROR_INCOMPLETE_PROFILE,
+  AUTH_ERROR_STORAGE_KEY,
+  useKeycloak,
+} from '@/lib/keycloak'
 
 import { Login } from './routes/auth'
 import { Dashboard } from './routes/dashboard'
@@ -63,9 +67,24 @@ const protectedRoutes = createBrowserRouter([
 ])
 
 export function AppRouter() {
-  const { isPending, isAuthenticated } = useKeycloak()
+  const { isPending, isAuthenticated, token, keycloak } = useKeycloak()
 
   if (isPending) {
+    return (
+      <CenterLayout>
+        <CircularProgress color="primary" />
+      </CenterLayout>
+    )
+  }
+
+  if (isAuthenticated && token && !token.isValid) {
+    sessionStorage.setItem(
+      AUTH_ERROR_STORAGE_KEY,
+      AUTH_ERROR_INCOMPLETE_PROFILE,
+    )
+    void keycloak.logout({
+      redirectUri: `${window.location.origin}${paths.auth.login.path}`,
+    })
     return (
       <CenterLayout>
         <CircularProgress color="primary" />
