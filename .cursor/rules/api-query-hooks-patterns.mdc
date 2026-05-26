@@ -1,6 +1,7 @@
 ---
 description: Patterns for creating React Query hooks that fetch data from an API endpoint, including Zod validation, extracted queryFn, and options passthrough.
-alwaysApply: true
+globs: "src/features/**/api/**/*.ts"
+alwaysApply: false
 ---
 
 # API Query Hook Patterns

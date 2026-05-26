@@ -1,0 +1,50 @@
+---
+description: Keycloak auth, provider setup, login/logout, and dev AUTH_BYPASS. Use when editing auth, providers, or API clients that attach tokens.
+globs: "src/lib/keycloak/**,src/app/provider.tsx,src/app/routes/auth/**,src/lib/openapi-client.ts,src/lib/api-client.ts"
+alwaysApply: false
+---
+
+# Keycloak Auth Patterns
+
+**When to apply**: Editing authentication, `KeycloakProvider`, login/logout routes, or OpenAPI/Axios clients that read tokens.
+
+## Environment
+
+- Auth config comes from validated `env` in `@/config/env` — never `import.meta.env` directly.
+- `VITE_APP_AUTH_BYPASS=true` is **development only** for UI work without a Keycloak server. Do not enable in production builds.
+
+## Provider (`src/app/provider.tsx`)
+
+```tsx
+// ✅ Dev bypass — skip Keycloak when building UI without IdP
+if (env.AUTH_BYPASS) {
+  return <AppProviders>{children}</AppProviders>
+}
+
+// ✅ Production path — wrap with KeycloakProvider
+return (
+  <KeycloakProvider client={keycloakClient} ...>
+    <AppProviders>{children}</AppProviders>
+  </KeycloakProvider>
+)
+```
+
+- Keep React Query, theme, and other providers in `AppProviders` so they work in both bypass and authenticated modes.
+
+## Hooks and routes
+
+- Use project exports from `@/lib/keycloak` (e.g. `useKeycloak`, `useKeycloakAuth`) — do not instantiate `Keycloak` in feature code.
+- Login: `keycloak.login({ redirectUri: ... })` from the login route.
+- Logout: `keycloak.logout({ redirectUri: ... })` from shell/header actions.
+
+## API clients
+
+Generated clients (`src/lib/openapi-client.ts`, `src/lib/api-client.ts`) should:
+
+- Attach tokens via `keycloak.updateToken(...)` before requests when not in bypass mode.
+- On token refresh failure, redirect to login (e.g. `logoutToLogin`) — do not leave silent 401s.
+
+## Rules
+
+- Do not commit real secrets; only `.env.example` documents variable names.
+- Do not remove bypass branching when adding features — TIS and greenfield apps may depend on it until Keycloak is available locally.

@@ -1,6 +1,7 @@
 ---
 description: Patterns for creating reusable custom React hooks.
-alwaysApply: true
+globs: "**/use-*.ts,src/**/hooks/**/*.ts"
+alwaysApply: false
 ---
 
 # Custom Hook Patterns

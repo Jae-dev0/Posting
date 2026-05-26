@@ -1,7 +1,7 @@
 ---
 description: Recommend consistent root element return shape across component state branches
-globs: **/*.{ts,tsx}
-alwaysApply: true
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
 ---
 
 # Consistent Return Shape

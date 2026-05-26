@@ -75,3 +75,27 @@ Builds and starts the app in detached mode.
 #### `docker-compose down`
 
 Stop and remove the containers
+
+---
+
+### Agent instructions (`AGENTS.md`)
+
+This repo includes **`AGENTS.md`** — the canonical copy for Jacliner React + Vite apps (Baseline 2024, stack, `.cursor/rules/`, Modern Web Guidance).
+
+When you change org-wide agent policy:
+
+1. Edit **`AGENTS.md`**, **`.cursor/rules/`**, and **`.cursor/skills/`** in this template repo
+2. Copy them **as-is** into each app repo (identical across projects)
+
+```bash
+# From Desktop/Projects — adjust paths if needed
+TEMPLATE=react-ts-vite-template
+for app in tis-web-app fleet-inventory-web-app ems-web-app crewing-web-app; do
+  cp "$TEMPLATE/AGENTS.md" "$app/AGENTS.md"
+  rm -rf "$app/.cursor/rules" "$app/.cursor/skills"
+  cp -r "$TEMPLATE/.cursor/rules" "$app/.cursor/"
+  cp -r "$TEMPLATE/.cursor/skills" "$app/.cursor/"
+done
+```
+
+New repos generated from this template should include the same `AGENTS.md` and `.cursor/` tree without edits.

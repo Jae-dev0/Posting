@@ -1,6 +1,7 @@
 ---
 description: Patterns for creating reusable UI components that behave like native HTML elements with custom defaults.
-alwaysApply: true
+globs: "src/components/**/*.tsx"
+alwaysApply: false
 ---
 
 # Reusable Component Patterns
