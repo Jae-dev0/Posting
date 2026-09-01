@@ -7,11 +7,20 @@ description: Scaffold a new Jacliner feature module (folders, barrel, mock data 
 
 Use when the user asks to add a new feature, settings section, or module under `src/features/`.
 
+## Which workflow?
+
+| User intent                                                                | Follow                         |
+| -------------------------------------------------------------------------- | ------------------------------ |
+| Settings lookup / admin CRUD (list + filters + table + create/edit dialog) | `jacliner-settings-crud` skill |
+| Create/edit form dialog only                                               | `jacliner-form-dialog` skill   |
+| General feature (dashboard, operations, procurement, etc.)                 | This skill                     |
+| No API client yet                                                          | `mock-data-patterns.mdc` below |
+
 ## Before coding
 
 1. Check `package.json` for `@jacliner/*-api-ts-client`.
-2. **Has client** → plan `api/` hooks (see `.cursor/rules/jacliner-api-client-patterns.mdc`, `api-query-hooks-patterns.mdc`).
-3. **No client yet** → plan `mock-*.ts` + `Status` UI (see `.cursor/rules/mock-data-patterns.mdc`).
+2. **Has client** → plan `api/` hooks (see `jacliner-api-client-patterns.mdc`, `api-query-hooks-patterns.mdc`, `api-mutation-hooks-patterns.mdc`).
+3. **No client yet** → plan `mock-*.ts` + `Status` UI (see `mock-data-patterns.mdc`).
 
 ## Folder structure
 
@@ -23,6 +32,7 @@ src/features/<feature-name>/
 │   └── mock-<feature>-data.ts      # only if no API yet
 ├── api/                            # only when Jacliner client exists
 │   ├── use-list-*.ts
+│   ├── use-create-*.ts             # when mutations exist
 │   └── index.ts
 ├── index.ts                        # barrel exports
 └── types.ts                        # optional shared types
@@ -39,7 +49,8 @@ src/features/<feature-name>/
 
 ## UI checklist
 
-- MUI 7 + existing layout primitives (`ContentLayout`, `PagedTableCard`, `ListPageToolbar` when present).
+- MUI 7 + existing layout primitives (`ContentLayout`, `EntityListPage`, `PagedTableCard`, `ListPageToolbar` when present).
+- Settings CRUD pages: use `EntityListPage` with filters **inside** `PagedTableCard` (see `jacliner-settings-crud` skill).
 - Handle `pending`, `error`, `success` explicitly (`react-query-status-handling.mdc`).
 - Named exports; kebab-case filenames (`reusable-component-patterns.mdc` for shared primitives only).
 
@@ -49,4 +60,4 @@ For new UI behavior (dialogs, forms, motion), run MWG search/retrieve before imp
 
 ## Output
 
-When done, summarize: paths created, mock vs API choice, and what the user must add next (env, route registration, backend).
+When done, summarize: paths created, mock vs API choice, which skill/workflow was followed, and what the user must add next (env, route registration, backend).

@@ -22,7 +22,7 @@ This project's Baseline target is **Baseline 2024**.
 - React 19, TypeScript, Vite
 - MUI 7 (Emotion) — prefer platform-native HTML/CSS when Modern Web Guidance recommends them for **new** work; stay consistent with existing MUI when editing current screens
 - React Router 7 — route paths via `paths` in `@/config/paths` (no hardcoded URL strings)
-- TanStack React Query — configured in `src/app/` providers; follow `.cursor/rules/api-query-hooks-patterns.mdc` and `react-query-status-handling.mdc`
+- TanStack React Query — configured in `src/app/` providers; follow `.cursor/rules/api-query-hooks-patterns.mdc`, `api-mutation-hooks-patterns.mdc`, and `react-query-status-handling.mdc`
 - Axios, Zod, React Hook Form + `@hookform/resolvers`
 - Keycloak (`keycloak-js`); `VITE_APP_AUTH_BYPASS=true` is dev-only
 - API clients: use `@jacliner/*-api-ts-client` from `package.json` when this app has a generated client (see `jacliner-api-client-patterns.mdc`)
@@ -47,7 +47,8 @@ Copy the whole `rules/` folder from the template when updating. Rules apply by *
 | `config-patterns.mdc`                 | Always — env vars and `paths`                   |
 | `mock-data-patterns.mdc`              | `mock-*.ts`, feature routes — UI before backend |
 | `jacliner-api-client-patterns.mdc`    | `api/` hooks, OpenAPI client, query keys        |
-| `api-query-hooks-patterns.mdc`        | `src/features/**/api/**/*.ts`                   |
+| `api-query-hooks-patterns.mdc`        | `src/features/**/api/**/*.ts` (queries)         |
+| `api-mutation-hooks-patterns.mdc`     | `src/features/**/api/**/*.ts` (mutations)       |
 | `keycloak-auth-patterns.mdc`          | Keycloak, providers, API token wiring           |
 | `react-query-status-handling.mdc`     | TS/TSX — pending / error / success              |
 | `reusable-component-patterns.mdc`     | `src/components/**`                             |
@@ -58,9 +59,11 @@ Copy the whole `rules/` folder from the template when updating. Rules apply by *
 
 ## Cursor skills (`.cursor/skills/`)
 
-| Skill                  | Purpose                                                     |
-| ---------------------- | ----------------------------------------------------------- |
-| `jacliner-new-feature` | Scaffold `src/features/<name>/` (mock vs API, route wiring) |
+| Skill                    | Purpose                                                            |
+| ------------------------ | ------------------------------------------------------------------ |
+| `jacliner-new-feature`   | Scaffold `src/features/<name>/` (mock vs API, route wiring)        |
+| `jacliner-settings-crud` | Settings lookup CRUD — list page, filters, table, form dialog, API |
+| `jacliner-form-dialog`   | Create/edit dialog — RHF + Zod + mutations + snackbar              |
 
 **Global (your machine):** `modern-web-guidance` in `~/.cursor/skills/` — search/retrieve web platform guides.
 
@@ -69,6 +72,7 @@ Copy the whole `rules/` folder from the template when updating. Rules apply by *
 - Handle `pending`, `error`, and `success` explicitly (`Status` prop / query helpers)
 - Validate API responses with Zod (`schema.parse`); centralize query keys per feature
 - No backend yet → mocks + `mock-data-patterns.mdc`; backend ready → `api/` + Jacliner client rules
+- Settings CRUD pages → `EntityListPage` shell with filters **inside** `PagedTableCard` (`jacliner-settings-crud` skill)
 
 ## Browser support
 
