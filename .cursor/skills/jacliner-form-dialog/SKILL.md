@@ -86,7 +86,12 @@ const formValues = useMemo((): BrandFormValues => {
   return emptyFormValues
 }, [open, brand])
 
-const { handleSubmit, control, reset, formState: { isDirty } } = useForm<BrandFormValues>({
+const {
+  handleSubmit,
+  control,
+  reset,
+  formState: { isDirty },
+} = useForm<BrandFormValues>({
   mode: 'onChange',
   defaultValues: emptyFormValues,
   values: formValues,

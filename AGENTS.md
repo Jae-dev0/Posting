@@ -59,11 +59,11 @@ Copy the whole `rules/` folder from the template when updating. Rules apply by *
 
 ## Cursor skills (`.cursor/skills/`)
 
-| Skill                     | Purpose                                                              |
-| ------------------------- | -------------------------------------------------------------------- |
-| `jacliner-new-feature`    | Scaffold `src/features/<name>/` (mock vs API, route wiring)           |
-| `jacliner-settings-crud`  | Settings lookup CRUD — list page, filters, table, form dialog, API   |
-| `jacliner-form-dialog`    | Create/edit dialog — RHF + Zod + mutations + snackbar                |
+| Skill                    | Purpose                                                            |
+| ------------------------ | ------------------------------------------------------------------ |
+| `jacliner-new-feature`   | Scaffold `src/features/<name>/` (mock vs API, route wiring)        |
+| `jacliner-settings-crud` | Settings lookup CRUD — list page, filters, table, form dialog, API |
+| `jacliner-form-dialog`   | Create/edit dialog — RHF + Zod + mutations + snackbar              |
 
 **Global (your machine):** `modern-web-guidance` in `~/.cursor/skills/` — search/retrieve web platform guides.
 

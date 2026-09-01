@@ -9,12 +9,12 @@ Use when the user asks to add a new feature, settings section, or module under `
 
 ## Which workflow?
 
-| User intent | Follow |
-|-------------|--------|
+| User intent                                                                | Follow                         |
+| -------------------------------------------------------------------------- | ------------------------------ |
 | Settings lookup / admin CRUD (list + filters + table + create/edit dialog) | `jacliner-settings-crud` skill |
-| Create/edit form dialog only | `jacliner-form-dialog` skill |
-| General feature (dashboard, operations, procurement, etc.) | This skill |
-| No API client yet | `mock-data-patterns.mdc` below |
+| Create/edit form dialog only                                               | `jacliner-form-dialog` skill   |
+| General feature (dashboard, operations, procurement, etc.)                 | This skill                     |
+| No API client yet                                                          | `mock-data-patterns.mdc` below |
 
 ## Before coding
 

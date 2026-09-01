@@ -73,7 +73,10 @@ Use `EntityListPage` for the page shell. **Place filters inside `PagedTableCard`
         }))
       }}
     >
-      <BrandFilters filters={{ q: search, filter }} onFilterChange={handleFilterChange} />
+      <BrandFilters
+        filters={{ q: search, filter }}
+        onFilterChange={handleFilterChange}
+      />
       <BrandTables
         data={data}
         status={status}
@@ -96,13 +99,13 @@ Use `EntityListPage` for the page shell. **Place filters inside `PagedTableCard`
 
 ## Page state (route owns all data wiring)
 
-| State | Purpose |
-|-------|---------|
+| State                        | Purpose                                                  |
+| ---------------------------- | -------------------------------------------------------- |
 | `search` + `debouncedSearch` | `useDebouncedValue(search, { wait: 350 })` for `q` param |
-| `filter` | API `filter` object |
-| `pagination` | `page`, `perPage`, `sort` |
-| `isDialogCreateOpen` | Create/edit dialog visibility |
-| `selectedItem` | Entity being edited (`undefined` for create) |
+| `filter`                     | API `filter` object                                      |
+| `pagination`                 | `page`, `perPage`, `sort`                                |
+| `isDialogCreateOpen`         | Create/edit dialog visibility                            |
+| `selectedItem`               | Entity being edited (`undefined` for create)             |
 
 Derive display values from query result:
 
