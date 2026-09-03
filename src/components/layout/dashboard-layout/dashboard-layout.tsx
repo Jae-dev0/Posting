@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/material'
 import { ReactNode, useEffect } from 'react'
-import { LuLogOut } from 'react-icons/lu'
+import { LuLogOut, LuSend } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router'
 
 import jacLinerLogo from '@/assets/jac-liner-logo.svg'
@@ -74,21 +74,37 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                   <Link
                     underline="none"
                     component={RouterLink}
-                    to={paths.home.getHref()}
+                    to={paths.posting.create.getHref()}
                   >
-                    <Typography
-                      variant="h6"
-                      component={Box}
-                      fontWeight={600}
-                      sx={{
-                        padding: '0px 8px',
-                        borderRadius: '8px',
-                        textTransform: 'uppercase',
-                        border: '1px solid #CDD7E1',
-                      }}
-                    >
-                      Template Management System
-                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Box
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 1,
+                          bgcolor: 'primary.main',
+                          color: 'common.white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <LuSend size={14} />
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        component={Box}
+                        fontWeight={600}
+                        sx={{
+                          padding: '0px 8px',
+                          borderRadius: '8px',
+                          border: '1px solid',
+                          borderColor: 'border.default',
+                        }}
+                      >
+                        Social Media Publisher
+                      </Typography>
+                    </Stack>
                   </Link>
                   <img src={jacLinerLogo} alt="FMS" height={20} />
                 </Stack>
@@ -133,14 +149,16 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
             </Grid>
           </Grid>
         </Toolbar>
-        <Box sx={{ border: '1px solid', borderColor: 'divider' }}>
-          {navItems}
-        </Box>
+        {navItems ? (
+          <Box sx={{ border: '1px solid', borderColor: 'divider' }}>
+            {navItems}
+          </Box>
+        ) : null}
       </AppBar>
 
       <Stack direction="row">
         <ContentContainer>
-          <Toolbar sx={{ mb: 5 }} />
+          <Toolbar />
           {children}
         </ContentContainer>
       </Stack>

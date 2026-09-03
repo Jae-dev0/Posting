@@ -1,4 +1,5 @@
 import { CircularProgress } from '@mui/material'
+import { ReactNode } from 'react'
 import {
   createBrowserRouter,
   Navigate,
@@ -10,27 +11,41 @@ import {
 import { CenterLayout, PublicLayout } from '@/components/layout'
 import { PageNotFound } from '@/components/ui/page-not-found'
 import { paths } from '@/config/paths'
-import {
-  AUTH_ERROR_INCOMPLETE_PROFILE,
-  AUTH_ERROR_STORAGE_KEY,
-  useKeycloak,
-} from '@/lib/keycloak'
+import { PostingLayout } from '@/features/posting'
+import { useAuth, useCanManageAccounts } from '@/lib/auth'
 
 import { Login } from './routes/auth'
 import { Dashboard } from './routes/dashboard'
+import {
+  ConnectedAccountsPage,
+  CreatePostPage,
+  PostHistoryPage,
+  ScheduledPostsPage,
+  UserAccountsPage,
+} from './routes/posting'
 import { AppRoot } from './routes/root'
 
 const AuthAppRoot = () => <AppRoot />
 
 const LoginRedirect = () => {
-  const location = useLocation()
-  return <Navigate to={paths.auth.login.getHref(location.pathname)} replace />
+  const { pathname } = useLocation()
+  return <Navigate to={paths.auth.login.getHref(pathname)} replace />
 }
 
 const HomeRedirect = () => {
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirectTo')
   return <Navigate to={redirectTo ?? paths.notFound.getHref()} replace />
+}
+
+const RequireAccountManagement = ({ children }: { children: ReactNode }) => {
+  const canManageAccounts = useCanManageAccounts()
+
+  if (!canManageAccounts) {
+    return <Navigate to={paths.posting.create.getHref()} replace />
+  }
+
+  return children
 }
 
 const guestRoutes = createBrowserRouter([
@@ -54,11 +69,60 @@ const protectedRoutes = createBrowserRouter([
   {
     path: paths.home.path,
     element: <AuthAppRoot />,
-    children: [{ index: true, element: <Dashboard /> }],
+    children: [
+      {
+        index: true,
+        element: <Navigate to={paths.posting.create.getHref()} replace />,
+      },
+    ],
+  },
+  {
+    path: paths.posting.root.path,
+    element: <AuthAppRoot />,
+    children: [
+      {
+        element: <PostingLayout />,
+        children: [
+          {
+            path: 'create',
+            element: <CreatePostPage />,
+          },
+          {
+            path: 'history',
+            element: <PostHistoryPage />,
+          },
+          {
+            path: 'scheduled',
+            element: <ScheduledPostsPage />,
+          },
+          {
+            path: 'accounts',
+            element: (
+              <RequireAccountManagement>
+                <ConnectedAccountsPage />
+              </RequireAccountManagement>
+            ),
+          },
+          {
+            path: 'users',
+            element: (
+              <RequireAccountManagement>
+                <UserAccountsPage />
+              </RequireAccountManagement>
+            ),
+          },
+          {
+            index: true,
+            element: <Navigate to={paths.posting.create.getHref()} replace />,
+          },
+        ],
+      },
+    ],
   },
   {
     path: paths.dashboard.path,
     element: <AuthAppRoot />,
+    children: [{ index: true, element: <Dashboard /> }],
   },
   {
     path: '*',
@@ -67,24 +131,9 @@ const protectedRoutes = createBrowserRouter([
 ])
 
 export function AppRouter() {
-  const { isPending, isAuthenticated, token, keycloak } = useKeycloak()
+  const { isPending, isAuthenticated } = useAuth()
 
   if (isPending) {
-    return (
-      <CenterLayout>
-        <CircularProgress color="primary" />
-      </CenterLayout>
-    )
-  }
-
-  if (isAuthenticated && token && !token.isValid) {
-    sessionStorage.setItem(
-      AUTH_ERROR_STORAGE_KEY,
-      AUTH_ERROR_INCOMPLETE_PROFILE,
-    )
-    void keycloak.logout({
-      redirectUri: `${window.location.origin}${paths.auth.login.path}`,
-    })
     return (
       <CenterLayout>
         <CircularProgress color="primary" />

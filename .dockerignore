@@ -1,3 +1,16 @@
 .pnpm-store
 node_modules
 dist
+dist-ssr
+dev-dist
+.git
+.github
+.husky
+.cursor
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+backend
+terminals

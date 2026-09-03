@@ -2,7 +2,8 @@ import { z } from 'zod/v4'
 
 const createEnv = () => {
   const EnvSchema = z.object({
-    API_URL: z.string().nonempty(),
+    /** Empty string uses same-origin requests (Docker nginx `/api` proxy). */
+    API_URL: z.string().default(''),
     KEYCLOAK_URL: z.string().nonempty(),
     KEYCLOAK_REALM: z.string().default('master'),
     KEYCLOAK_CLIENT_ID: z.string().nonempty(),
@@ -10,7 +11,7 @@ const createEnv = () => {
     AUTH_BYPASS: z
       .string()
       .default('false')
-      .transform((v) => v === 'true' && import.meta.env.DEV),
+      .transform((v) => v === 'true'),
 
     /**
      * Client idle logout (minutes). Set via `VITE_APP_SESSION_IDLE_LOGOUT_MINUTES`.

@@ -13,9 +13,9 @@ This project's Baseline target is **Baseline 2024**.
 - **Build:** `pnpm build` (TypeScript project build + Vite → `dist/`)
 - **Lint / format:** `pnpm run lint`, `pnpm run format` (Prettier via lint-staged on commit)
 - **Preview:** `pnpm preview`
-- **Docker (optional):** `docker-compose up --build -d` / `docker-compose down`
-- **VS Code Dev Containers (optional):** reopen in container for a preconfigured environment
+- **Docker (optional):** `docker compose up --build -d` (Postgres + API + nginx frontend on port 3000); `docker compose down` to stop
 - Copy `.env.example` → `.env` and set `VITE_APP_*` before local run; use `env` from `@/config/env` — not `import.meta.env` in feature code
+- Backend lives in `backend/` (Express + Prisma + PostgreSQL). See `backend/README.md`
 
 ## Stack
 

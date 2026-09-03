@@ -1,23 +1,30 @@
-import { Outlet } from 'react-router'
+import { Outlet, useNavigate } from 'react-router'
 
 import { DashboardLayout } from '@/components/layout'
 import { paths } from '@/config/paths'
-import { useKeycloakAuth } from '@/lib/keycloak'
-
-import { DashboardNavLinks } from './nav-links'
+import { useAuthUser } from '@/lib/auth'
 
 export function AppRoot() {
-  const [user, { keycloak }] = useKeycloakAuth()
+  const [user, { logout }] = useAuthUser()
+  const navigate = useNavigate()
+
   return (
     <DashboardLayout
-      user={user}
+      user={
+        user
+          ? {
+              ...user,
+              company: {
+                employeeNumber: `USR-${user.id.toString().padStart(4, '0')}`,
+              },
+            }
+          : null
+      }
       enableDrawer={true}
       onLogout={() => {
-        void keycloak.logout({
-          redirectUri: `${window.location.origin}${paths.auth.login.getHref()}`,
-        })
+        logout()
+        void navigate(paths.auth.login.getHref(), { replace: true })
       }}
-      navItems={<DashboardNavLinks />}
     >
       <Outlet />
     </DashboardLayout>

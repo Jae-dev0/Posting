@@ -23,4 +23,30 @@ export const paths = {
         `/auth/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`,
     },
   },
+  posting: {
+    root: {
+      path: '/posting',
+      getHref: () => '/posting',
+    },
+    create: {
+      path: '/posting/create',
+      getHref: () => '/posting/create',
+    },
+    history: {
+      path: '/posting/history',
+      getHref: () => '/posting/history',
+    },
+    scheduled: {
+      path: '/posting/scheduled',
+      getHref: () => '/posting/scheduled',
+    },
+    accounts: {
+      path: '/posting/accounts',
+      getHref: () => '/posting/accounts',
+    },
+    users: {
+      path: '/posting/users',
+      getHref: () => '/posting/users',
+    },
+  },
 } as const

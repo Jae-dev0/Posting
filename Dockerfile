@@ -1,36 +1,38 @@
 FROM node:22-bookworm AS base
 
-# Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
-# Copy .npmrc
 COPY .npmrc .
-
-# Install dependencies based on the preferred package manager
-COPY package.json pnpm-workspace.yaml yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 RUN --mount=type=secret,id=npm-token \
-  printf '\n//npm.pkg.github.com/:_authToken=%s\n' "$(cat /run/secrets/npm-token | tr -d '\n')" >> .npmrc && \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-  
-# Rebuild the source code only when needed
+  if [ -s /run/secrets/npm-token ]; then \
+    printf '\n//npm.pkg.github.com/:_authToken=%s\n' "$(tr -d '\n' < /run/secrets/npm-token)" >> .npmrc; \
+  fi && \
+  corepack enable pnpm && pnpm install --frozen-lockfile
+
 FROM base AS builder
 WORKDIR /app
+
+ARG VITE_APP_API_URL=
+ARG VITE_APP_KEYCLOAK_URL=http://localhost:8080
+ARG VITE_APP_KEYCLOAK_REALM=master
+ARG VITE_APP_KEYCLOAK_CLIENT_ID=dev-client
+ARG VITE_APP_AUTH_BYPASS=false
+
+ENV VITE_APP_API_URL=$VITE_APP_API_URL
+ENV VITE_APP_KEYCLOAK_URL=$VITE_APP_KEYCLOAK_URL
+ENV VITE_APP_KEYCLOAK_REALM=$VITE_APP_KEYCLOAK_REALM
+ENV VITE_APP_KEYCLOAK_CLIENT_ID=$VITE_APP_KEYCLOAK_CLIENT_ID
+ENV VITE_APP_AUTH_BYPASS=$VITE_APP_AUTH_BYPASS
+
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.app.json tsconfig.node.json vite.config.ts index.html ./
+COPY public ./public
+COPY src ./src
 
-RUN \
-    if [ -f yarn.lock ]; then yarn run build; \
-    elif [ -f package-lock.json ]; then npm run build; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
+RUN corepack enable pnpm && pnpm run build
 
-# Production image, copy build files and run nginx
 FROM nginx:1.28-alpine-slim
 WORKDIR /usr/share/nginx/html
 

@@ -1,83 +1,91 @@
-import { Alert, Button, Paper, Stack, Typography } from '@mui/material'
-import { useState } from 'react'
-import { useLocation } from 'react-router'
+import { Alert, Button, Stack, TextField } from '@mui/material'
+import { FormEvent, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 
 import { ContentLayout } from '@/components/layout'
-import {
-  AUTH_ERROR_GENERIC_MESSAGE,
-  AUTH_ERROR_INCOMPLETE_PROFILE,
-  AUTH_ERROR_STORAGE_KEY,
-  INCOMPLETE_PROFILE_MESSAGE,
-  useKeycloak,
-} from '@/lib/keycloak'
+import { paths } from '@/config/paths'
+import { AuthCard } from '@/features/auth'
+import { loginRequest } from '@/lib/auth/api'
+import { useAuth } from '@/lib/auth/hooks'
+import { loginFormSchema } from '@/lib/auth/schemas'
 
-const projectName = 'Template MS'
+export function Login() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { login } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-export const Login = () => {
-  const yearNow = new Date().getFullYear()
-  const { keycloak } = useKeycloak()
-  const location = useLocation()
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
 
-  const [authError] = useState(() => {
-    const value = sessionStorage.getItem(AUTH_ERROR_STORAGE_KEY)
-    if (value) {
-      sessionStorage.removeItem(AUTH_ERROR_STORAGE_KEY)
+    const parsed = loginFormSchema.safeParse({ email, password })
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Invalid form input')
+      return
     }
-    return value
-  })
+
+    setIsSubmitting(true)
+
+    try {
+      const session = await loginRequest(
+        parsed.data.email,
+        parsed.data.password,
+      )
+      login(session)
+      const redirectTo =
+        searchParams.get('redirectTo') ?? paths.posting.create.getHref()
+      void navigate(redirectTo, { replace: true })
+    } catch {
+      setError('Invalid email or password')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <ContentLayout title="Login">
-      {authError && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {authError === AUTH_ERROR_INCOMPLETE_PROFILE
-            ? INCOMPLETE_PROFILE_MESSAGE
-            : AUTH_ERROR_GENERIC_MESSAGE}
-        </Alert>
-      )}
-
-      <Paper
-        variant="outlined"
-        sx={{
-          width: '100%',
-          p: 5,
-          mb: 3,
-          borderRadius: 5,
-        }}
+      <AuthCard
+        title="Sign In"
+        subtitle="Sign in to manage and publish posts across your connected social platforms."
       >
-        <Typography variant="h4" fontWeight="bold" color="primary">
-          {projectName}
-        </Typography>
+        {error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : null}
 
-        <Stack spacing={0.5} my={3}>
-          <Typography variant="subtitle2" fontWeight="600">
+        <Stack component="form" spacing={2} onSubmit={handleSubmit}>
+          <TextField
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            fullWidth
+          />
+          <TextField
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            fullWidth
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            disabled={isSubmitting}
+            sx={{ mt: 1 }}
+          >
             Sign In
-          </Typography>
-          <Typography variant="caption" fontWeight="500">
-            To access {projectName}, you will be securely redirected to JAC ERP
-            login page.
-          </Typography>
+          </Button>
         </Stack>
-
-        <Button
-          fullWidth
-          variant="contained"
-          sx={{ backgroundColor: '#F9001C' }}
-          onClick={() =>
-            keycloak.login({
-              redirectUri: `${window.location.origin}${location.search}`,
-            })
-          }
-        >
-          Continue to Sign In
-        </Button>
-      </Paper>
-
-      <Stack direction="row" justifyContent="center">
-        <Typography variant="caption" color="text.secondary" fontWeight="600">
-          {`© JAC Liner ${projectName} ${yearNow}. All rights reserved.`}
-        </Typography>
-      </Stack>
+      </AuthCard>
     </ContentLayout>
   )
 }

@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SocialPlatform {
+  facebook
+  instagram
+  tiktok
+}
+
+enum MediaType {
+  image
+  video
+}
+
+enum PublishMode {
+  now
+  schedule
+  draft
+}
+
+enum PostStatus {
+  draft
+  scheduled
+  published
+  failed
+}
+
+enum UserRole {
+  main_admin
+  admin
+}
+
+model Company {
+  id                Int                @id @default(autoincrement())
+  name              String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  users             User[]
+  connectedAccounts ConnectedAccount[]
+  socialAccounts    SocialAccount[]
+  posts             Post[]
+
+  @@map("companies")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           UserRole        @default(admin)
+  companyId      Int
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  socialAccounts SocialAccount[]
+  posts          Post[]          @relation("PostCreator")
+
+  @@index([companyId])
+  @@map("users")
+}
+
+model ConnectedAccount {
+  id            Int            @id @default(autoincrement())
+  companyId     Int
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  platform      SocialPlatform
+  accountName   String
+  handle        String
+  isConnected   Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  posts         PostAccount[]
+  socialAccount SocialAccount?
+
+  @@unique([companyId, platform, handle])
+  @@index([companyId])
+  @@map("connected_accounts")
+}
+
+/// Encrypted Meta/Facebook (and future platform) connections — company-isolated.
+model SocialAccount {
+  id                 Int               @id @default(autoincrement())
+  companyId          Int
+  company            Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  connectedByUserId  Int?
+  connectedByUser    User?             @relation(fields: [connectedByUserId], references: [id], onDelete: SetNull)
+  connectedAccountId Int?              @unique
+  connectedAccount   ConnectedAccount? @relation(fields: [connectedAccountId], references: [id], onDelete: SetNull)
+  platform           SocialPlatform
+  facebookUserId     String?
+  pageId             String
+  pageName           String
+  accessTokenEnc     String
+  tokenExpiresAt     DateTime?
+  isConnected        Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@unique([companyId, platform, pageId])
+  @@index([companyId])
+  @@map("social_accounts")
+}
+
+model Post {
+  id             Int            @id @default(autoincrement())
+  companyId      Int
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById    Int?
+  createdBy      User?          @relation("PostCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  caption        String
+  mediaUrl       String?
+  mediaType      MediaType?
+  publishMode    PublishMode
+  status         PostStatus
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  externalPostId String?
+  publishError   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  accounts       PostAccount[]
+
+  @@index([companyId])
+  @@index([externalPostId])
+  @@map("posts")
+}
+
+model PostAccount {
+  postId    Int
+  accountId Int
+  post      Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  account   ConnectedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([postId, accountId])
+  @@map("post_accounts")
+}
