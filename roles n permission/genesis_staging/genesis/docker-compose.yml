@@ -1,0 +1,19 @@
+name: genesis_staging
+
+services:
+  web:
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "2101:80"
+    volumes:
+      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
+      - .:/var/www/html:ro
+    depends_on:
+      - php
+
+  php:
+    image: php:8.2-fpm
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html

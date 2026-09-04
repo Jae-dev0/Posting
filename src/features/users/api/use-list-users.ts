@@ -13,6 +13,7 @@ export const managedUserSchema = z.object({
   fullname: z.string(),
   username: z.string(),
   role: z.enum(['main_admin', 'admin']),
+  companyId: z.number().optional(),
   createdAt: z.string(),
 })
 

@@ -23,6 +23,84 @@ export const paths = {
         `/auth/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`,
     },
   },
+  platform: {
+    root: {
+      path: '/platform',
+      getHref: () => '/platform',
+    },
+    dashboard: {
+      path: '/platform/dashboard',
+      getHref: () => '/platform/dashboard',
+    },
+    companies: {
+      path: '/platform/companies',
+      getHref: () => '/platform/companies',
+    },
+    company: {
+      path: '/platform/companies/:id',
+      getHref: (id: number | string) => `/platform/companies/${id}`,
+    },
+    websites: {
+      path: '/platform/websites',
+      getHref: () => '/platform/websites',
+    },
+    users: {
+      path: '/platform/users',
+      getHref: () => '/platform/users',
+    },
+    roles: {
+      path: '/platform/roles',
+      getHref: () => '/platform/roles',
+      roles: {
+        path: '/platform/roles/roles',
+        segment: 'roles',
+        getHref: () => '/platform/roles/roles',
+      },
+      permissionGroups: {
+        path: '/platform/roles/permission-groups',
+        segment: 'permission-groups',
+        getHref: () => '/platform/roles/permission-groups',
+      },
+    },
+    media: {
+      path: '/platform/media',
+      getHref: () => '/platform/media',
+    },
+    audit: {
+      path: '/platform/audit',
+      getHref: () => '/platform/audit',
+    },
+    settings: {
+      path: '/platform/settings',
+      getHref: () => '/platform/settings',
+    },
+  },
+  cms: {
+    root: {
+      path: '/cms',
+      getHref: () => '/cms',
+    },
+    dashboard: {
+      path: '/cms/dashboard',
+      getHref: () => '/cms/dashboard',
+    },
+    pages: {
+      path: '/cms/pages',
+      getHref: () => '/cms/pages',
+    },
+    media: {
+      path: '/cms/media',
+      getHref: () => '/cms/media',
+    },
+    navigation: {
+      path: '/cms/navigation',
+      getHref: () => '/cms/navigation',
+    },
+    settings: {
+      path: '/cms/settings',
+      getHref: () => '/cms/settings',
+    },
+  },
   posting: {
     root: {
       path: '/posting',

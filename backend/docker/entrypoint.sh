@@ -9,7 +9,9 @@ done
 
 if [ "${SEED_DATABASE:-false}" = "true" ]; then
   echo "Seeding database..."
-  npx tsx prisma/seed.ts
+  if ! npx tsx prisma/seed.ts; then
+    echo "Seed failed — continuing so API can still start."
+  fi
 fi
 
 echo "Starting API..."

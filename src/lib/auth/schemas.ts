@@ -10,6 +10,19 @@ export const authUserSchema = z.object({
   role: z.enum(['main_admin', 'admin']),
   companyId: z.number(),
   createdAt: z.string(),
+  status: z.enum(['active', 'disabled']).optional(),
+  isSuperAdmin: z.boolean().optional(),
+  permissions: z.array(z.string()).optional(),
+  roleAssignments: z
+    .array(
+      z.object({
+        roleId: z.number(),
+        roleName: z.string(),
+        scope: z.enum(['platform', 'company']),
+        companyId: z.number().nullable(),
+      }),
+    )
+    .optional(),
 })
 
 export const authSessionSchema = z.object({

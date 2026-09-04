@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480" fill="none" aria-hidden="true">
+  <!-- Soft travel motif: route lines, pins, ticket, hills -->
+  <g stroke="#194185" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <!-- dashed highway -->
+    <path d="M40 360 C160 300, 240 420, 360 340 S560 260, 680 320" stroke-dasharray="10 12"/>
+    <path d="M60 120 C180 180, 260 80, 400 140 S580 200, 690 110" stroke-dasharray="6 10" opacity="0.55"/>
+
+    <!-- location pins -->
+    <g fill="#194185" stroke="none">
+      <path d="M140 250c0-22 18-40 40-40s40 18 40 40c0 28-40 70-40 70s-40-42-40-70z"/>
+      <circle cx="180" cy="248" r="12" fill="#f5fbff"/>
+      <path d="M470 180c0-18 14-32 32-32s32 14 32 32c0 22-32 56-32 56s-32-34-32-56z"/>
+      <circle cx="502" cy="178" r="10" fill="#f5fbff"/>
+      <path d="M600 340c0-16 13-28 28-28s28 12 28 28c0 20-28 50-28 50s-28-30-28-50z"/>
+      <circle cx="628" cy="338" r="9" fill="#f5fbff"/>
+    </g>
+
+    <!-- ticket -->
+    <g fill="none" stroke="#194185">
+      <rect x="78" y="48" width="110" height="64" rx="10"/>
+      <path d="M108 48v64" stroke-dasharray="4 6"/>
+      <circle cx="93" cy="80" r="5" fill="#194185" stroke="none"/>
+      <path d="M122 70h48M122 90h36"/>
+    </g>
+
+    <!-- compass -->
+    <g>
+      <circle cx="640" cy="70" r="28"/>
+      <path d="M640 48l8 22-8 6-8-6z" fill="#bf9b3a" stroke="none"/>
+      <path d="M640 92l-8-22 8-6 8 6z" fill="#194185" stroke="none" opacity="0.35"/>
+      <circle cx="640" cy="70" r="4" fill="#194185" stroke="none"/>
+    </g>
+
+    <!-- distant hills -->
+    <path d="M20 430 C90 390, 140 450, 210 410 S320 390, 400 430 S520 460, 700 420" opacity="0.35"/>
+  </g>
+</svg>

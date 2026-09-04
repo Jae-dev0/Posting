@@ -1,0 +1,259 @@
+================================================================================
+KA-SOLID — AI CHATBOT UI/UX DESIGN SPEC
+================================================================================
+Last updated: 2026-08-25
+
+Reusable floating chat widget design. Brand colors, character art, and copy
+are placeholders — swap them for the host site. Layout, flows, and behavior
+below are the product design contract.
+
+
+--------------------------------------------------------------------------------
+1. PURPOSE
+--------------------------------------------------------------------------------
+
+A site-wide floating AI assistant that opens as a right-side drawer.
+
+Design goals
+  - Feel approachable and “always online,” not like a ticket form
+  - Reduce friction for common tasks without leaving the current page
+  - Stay honest about AI limits (always-visible disclaimer)
+  - Keep a clear visual system (primary + accent + soft surface)
+
+
+--------------------------------------------------------------------------------
+2. VISUAL SYSTEM
+--------------------------------------------------------------------------------
+
+Color tokens (rename prefixes to match the host brand)
+  --chat-primary       #194185   header, user bubbles, send button
+  --chat-primary-dark  #153670   send hover
+  --chat-primary-tint  #f2f6fc   chip hover / rich reply cards
+  --chat-accent        #bf9b3a   header underline, borders, notice icon
+  --chat-ink           #181d27   body text
+  --chat-muted         #535862   secondary text
+  --chat-soft          #f5fbff   panel background
+  --chat-border        #dfe5ee   dividers / bubble borders
+
+Typography
+  Font: clean sans (e.g. Poppins or host brand font)
+  Bubbles: ~12px / 1.55 line-height
+  Timestamps: 9px, muted
+  Quick actions: 10px, semibold
+  Notice / footer note: 8–10px
+
+Avatar
+  Message: 34×34, rounded square (11px radius), white fill
+  Header: 52×52, light border ring, 16px radius
+  Launcher: character image in accent-bordered white tile
+
+Status
+  Green online dot on header subtitle and launcher corner
+  (#34c66b / #64dc8b)
+
+
+--------------------------------------------------------------------------------
+3. WIDGET ANATOMY
+--------------------------------------------------------------------------------
+
+A. Floating launcher
+   - Fixed bottom-right (desktop ~28×26px inset; mobile tighter)
+   - 70×70 desktop, 56×56 mobile
+   - Accent border, soft primary-tinted shadow
+   - Opens panel; fades out while open
+
+B. Invite tip
+   - Speech bubble above launcher after ~1.25s entrance delay
+   - Short greeting + optional dismiss (X) without opening chat
+   - Hidden on ≤768px (launcher only)
+   - Auto-hidden when chat opens
+
+C. Scrim
+   - Full-viewport dim overlay behind panel (desktop)
+   - Click = soft close
+   - Hidden on mobile (panel is full-bleed)
+
+D. Side panel
+   - Right drawer: min(430px, 100vw) × 100dvh
+   - Slide-in ~320ms ease
+   - Stack: header → notice → conversation → composer
+   - Full width on ≤768px
+
+Panel chrome
+  Header
+    - Primary fill, accent bottom border, optional dotted texture
+    - Avatar + assistant name + short subtitle + online dot
+    - Actions: New Chat + Close (X)
+    - On small screens: hide “New Chat” text, keep icon
+
+  Notice bar
+    - Soft accent-tint strip
+    - Disclaimer: assistant can make mistakes; verify important info
+
+  Conversation
+    - Scrollable; live region for new messages
+    - Date chip, message rows, suggestion chips
+
+  Composer
+    - White footer; bordered auto-grow textarea (max ~500 chars)
+    - Send (paper-plane); disabled when empty or waiting
+    - Optional short footer note under the field
+
+
+--------------------------------------------------------------------------------
+4. CONVERSATION PATTERNS
+--------------------------------------------------------------------------------
+
+Assistant message
+  - Left-aligned; avatar + white bubble (asymmetric radius)
+  - Multi-paragraph OK; links use primary color
+  - Timestamp under bubble
+
+User message
+  - Right-aligned; primary bubble, white text
+  - No avatar; timestamp right-aligned
+
+Waiting state
+  - Temporary assistant row while reply loads
+  - Short waiting copy + optional branded micro-animation
+    (e.g. icon flying across bubble while text reveals, ~2.5s loop)
+  - Quick-action chips dim and disable until reply arrives
+
+Quick actions
+  - Pill chips under greeting or after recovery
+  - Click sends chip text as a user message
+  - Optional special chips: close chat and scroll/focus a page section
+
+Rich reply card (optional)
+  - Tinted card, accent left border, title + detail + CTA link
+
+Motion
+  - Messages fade/slide in (~250ms)
+  - Auto-scroll to latest
+  - Honor prefers-reduced-motion (static end state instead of loops)
+
+
+--------------------------------------------------------------------------------
+5. USER FLOWS
+--------------------------------------------------------------------------------
+
+5.1 Open
+  Triggers: launcher, invite tip, or page “open chat” controls
+  Effects: drawer open, body scroll lock, invite hidden,
+           focus input after slide (~340ms)
+
+5.2 Send
+  Enter sends; Shift+Enter newline
+  Ignore empty or in-flight sends
+  Sequence:
+    1. Append user bubble
+    2. Clear input; disable send; show waiting row
+    3. Request reply from backend (message + optional session)
+    4. Remove waiting; render assistant reply
+    5. Store session if returned (invisible to user)
+  Failure:
+    - Friendly apology
+    - Recovery chips that deep-link into useful page sections
+
+5.3 New Chat
+  Reset greeting + default chips
+  Clear session, counters, waiting state, input
+  Refocus input
+
+5.4 Close
+  Soft close (X / scrim): if user sent ≥1 message and feedback not shown,
+    show exit rating instead of closing
+  Force close (Escape, Skip, after feedback, deep-link exits):
+    close panel, restore scroll, focus launcher
+
+5.5 Exit feedback
+  Ask if the chat was helpful (emoji ratings + Skip)
+  Rate → short thank-you → auto-close ~900ms
+  Skip → immediate close
+  Once per conversation until New Chat
+
+
+--------------------------------------------------------------------------------
+6. RESPONSIVE
+--------------------------------------------------------------------------------
+
+≤768px
+  - Full-screen panel
+  - No scrim, no invite tip
+  - Shorter header; New Chat label hidden
+  - Smaller launcher, tighter insets
+  - Tighter conversation padding
+
+≤600px
+  - Launcher inset/size tightened further
+
+Desktop
+  - Partial-width drawer + dimmed page
+  - Invite tip after entrance delay
+
+
+--------------------------------------------------------------------------------
+7. ACCESSIBILITY
+--------------------------------------------------------------------------------
+
+  - Panel name + aria-hidden / aria-expanded on open/close
+  - Conversation: aria-live="polite"
+  - Waiting: role="status" with clear label
+  - Composer: accessible label for the textarea
+  - Icon-only controls: aria-label (Close, Send, Open, ratings)
+  - Chip groups: aria-label (Suggested questions / replies)
+  - Launcher: screen-reader name for the assistant
+  - Escape closes open panel
+  - Focus: open → input; close → launcher
+  - Respect prefers-reduced-motion
+
+
+--------------------------------------------------------------------------------
+8. COPY GUIDELINES (GENERIC)
+--------------------------------------------------------------------------------
+
+  - Short, friendly paragraphs; light emoji in greetings/chips/feedback
+  - Keep the mistakes disclaimer always visible in chrome
+  - Placeholder example: “Ask me anything…”
+  - Waiting example: “Assistant is arriving, please wait.”
+  - Error: apologize and offer recovery actions, don’t dead-end
+  - Replace greeting, subtitle, chips, and footer note per host site
+
+
+--------------------------------------------------------------------------------
+9. INTERACTION STATES
+--------------------------------------------------------------------------------
+
+State              Behavior
+-----------------  -----------------------------------------------------------
+Idle closed        Launcher + (desktop) invite tip
+Open               Drawer + scrim (desktop); launcher/invite faded
+Composing          Send enabled when textarea has text
+Waiting            Wait bubble; send locked; chips dimmed
+Error              Apology + recovery chips
+Feedback gate      Rating blocks soft close until rate/skip
+After New Chat     Fresh greeting + default chips; session cleared
+
+
+--------------------------------------------------------------------------------
+10. IMPLEMENTATION NOTES
+--------------------------------------------------------------------------------
+
+Z-index (keep order)
+  invite → launcher → scrim → panel
+  Site loaders (if any) sit above the chat until dismissed
+
+Patterns to reuse
+  - Accent accents + online dots are part of the look
+  - Rich replies → card pattern; suggestions → pill chips
+  - Page CTAs can open the same widget
+  - Session IDs are invisible; New Chat must clear them with the UI reset
+
+Swap for a new site
+  - Colors / font / avatar art / waiting motif
+  - Assistant name, greeting, chips, disclaimer, footer note
+  - Recovery deep-links to that site’s key sections
+
+================================================================================
+END OF DOCUMENT
+================================================================================

@@ -33,44 +33,246 @@ enum PostStatus {
   cancelled
 }
 
+/// Marketing roles (unchanged). Platform/CMS roles live in Role + UserRoleAssignment.
 enum UserRole {
   main_admin
   admin
 }
 
+enum CompanyStatus {
+  active
+  disabled
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum RoleScope {
+  platform
+  company
+}
+
+enum PageStatus {
+  draft
+  published
+  archived
+}
+
 model Company {
-  id                Int                 @id @default(autoincrement())
-  name              String
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  users             User[]
-  connectedAccounts ConnectedAccount[]
-  socialAccounts    SocialAccount[]
-  posts             Post[]
-  auditLogs         AuditLog[]
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  domain             String?
+  status             CompanyStatus        @default(active)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  users              User[]
+  connectedAccounts  ConnectedAccount[]
+  socialAccounts     SocialAccount[]
+  posts              Post[]
+  auditLogs          AuditLog[]
   accountPermissions AccountPermission[]
+  websites           Website[]
+  pages              Page[]
+  websiteSections    WebsiteSection[]
+  cmsMedia           CmsMedia[]
+  websiteSettings    WebsiteSetting[]
+  navigationItems    NavigationItem[]
+  roleAssignments    UserRoleAssignment[]
 
   @@map("companies")
 }
 
 model User {
-  id             Int                 @id @default(autoincrement())
-  email          String              @unique
-  passwordHash   String
-  firstName      String
-  lastName       String
-  role           UserRole            @default(admin)
-  companyId      Int
-  company        Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  socialAccounts SocialAccount[]
-  posts          Post[]              @relation("PostCreator")
-  auditLogs      AuditLog[]
+  id                 Int                  @id @default(autoincrement())
+  email              String               @unique
+  passwordHash       String
+  firstName          String
+  lastName           String
+  role               UserRole             @default(admin)
+  status             UserStatus           @default(active)
+  companyId          Int
+  company            Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  socialAccounts     SocialAccount[]
+  posts              Post[]               @relation("PostCreator")
+  auditLogs          AuditLog[]
   accountPermissions AccountPermission[]
+  roleAssignments    UserRoleAssignment[]
+  pagesCreated       Page[]               @relation("PageCreatedBy")
+  pagesUpdated       Page[]               @relation("PageUpdatedBy")
+  mediaUploaded      CmsMedia[]           @relation("MediaUploadedBy")
 
   @@index([companyId])
   @@map("users")
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id          Int                  @id @default(autoincrement())
+  name        String               @unique
+  description String?
+  scope       RoleScope
+  permissions RolePermission[]
+  assignments UserRoleAssignment[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// Platform roles use companyId = null. Company CMS roles require companyId.
+model UserRoleAssignment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roleId    Int
+  companyId Int?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@map("user_roles")
+}
+
+model Website {
+  id          Int       @id @default(autoincrement())
+  companyId   Int
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  domain      String?
+  isPrimary   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  pages       Page[]
+  sections    WebsiteSection[]
+  settings    WebsiteSetting[]
+  navigation  NavigationItem[]
+  media       CmsMedia[]
+
+  @@index([companyId])
+  @@map("websites")
+}
+
+model Page {
+  id          Int        @id @default(autoincrement())
+  companyId   Int
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  websiteId   Int
+  website     Website    @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  title       String
+  slug        String
+  content     String     @default("")
+  status      PageStatus @default(draft)
+  createdById Int?
+  createdBy   User?      @relation("PageCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById Int?
+  updatedBy   User?      @relation("PageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  sections    WebsiteSection[]
+
+  @@unique([websiteId, slug])
+  @@index([companyId])
+  @@map("pages")
+}
+
+model WebsiteSection {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  websiteId Int
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  pageId    Int?
+  page      Page?    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  key       String
+  title     String?
+  content   String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([pageId])
+  @@map("website_sections")
+}
+
+model CmsMedia {
+  id           Int      @id @default(autoincrement())
+  companyId    Int
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  websiteId    Int?
+  website      Website? @relation(fields: [websiteId], references: [id], onDelete: SetNull)
+  filename     String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  url          String
+  uploadedById Int?
+  uploadedBy   User?    @relation("MediaUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId])
+  @@unique([companyId, filename])
+  @@map("cms_media")
+}
+
+model WebsiteSetting {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  websiteId Int
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([websiteId, key])
+  @@index([companyId])
+  @@map("website_settings")
+}
+
+model NavigationItem {
+  id        Int      @id @default(autoincrement())
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  websiteId Int
+  website   Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  label     String
+  href      String
+  sortOrder Int      @default(0)
+  parentId  Int?
+  parent    NavigationItem?  @relation("NavChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  NavigationItem[] @relation("NavChildren")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([websiteId])
+  @@map("navigation_items")
 }
 
 model ConnectedAccount {

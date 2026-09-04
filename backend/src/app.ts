@@ -7,12 +7,17 @@ import { Prisma } from '@prisma/client'
 import { env } from './config/env.js'
 import { accountsRouter } from './routes/accounts.js'
 import { analyticsRouter } from './routes/analytics.js'
+import { auditRouter } from './routes/audit.js'
 import { authRouter } from './routes/auth.js'
+import { cmsRouter } from './routes/cms.js'
+import { companiesRouter } from './routes/companies.js'
 import { healthRouter } from './routes/health.js'
+import { mediaRouter } from './routes/media.js'
+import { platformRouter } from './routes/platform.js'
 import { postsRouter } from './routes/posts.js'
+import { rolesRouter } from './routes/roles.js'
 import { facebookSocialRouter } from './routes/social-facebook.js'
 import { instagramSocialRouter } from './routes/social-instagram.js'
-import { mediaRouter } from './routes/media.js'
 import { teamRouter } from './routes/team.js'
 import { usersRouter } from './routes/users.js'
 
@@ -36,6 +41,11 @@ export function createApp() {
   app.use('/api/posts', postsRouter)
   app.use('/api/analytics', analyticsRouter)
   app.use('/api/team', teamRouter)
+  app.use('/api/companies', companiesRouter)
+  app.use('/api/platform', platformRouter)
+  app.use('/api/audit', auditRouter)
+  app.use('/api/roles', rolesRouter)
+  app.use('/api/cms', cmsRouter)
 
   app.use((req, res) => {
     res.status(404).json({ message: `Route not found: ${req.method} ${req.path}` })

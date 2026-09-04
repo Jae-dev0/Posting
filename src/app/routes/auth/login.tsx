@@ -1,13 +1,29 @@
-import { Alert, Button, Stack, TextField } from '@mui/material'
+import { Alert, Button, Stack, TextField, Typography } from '@mui/material'
 import { FormEvent, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { ContentLayout } from '@/components/layout'
-import { paths } from '@/config/paths'
 import { AuthCard } from '@/features/auth'
+import {
+  getDepartmentHomePath,
+  getHomeDepartment,
+  hasCmsRole,
+  hasMarketingRole,
+  hasPlatformRole,
+} from '@/lib/auth/departments'
 import { loginRequest } from '@/lib/auth/api'
 import { useAuth } from '@/lib/auth/hooks'
 import { loginFormSchema } from '@/lib/auth/schemas'
+import type { AuthUser } from '@/lib/auth/types'
+
+function canAccessRedirect(user: AuthUser, redirectTo: string) {
+  if (redirectTo.startsWith('/platform')) return hasPlatformRole(user)
+  if (redirectTo.startsWith('/cms')) return hasCmsRole(user)
+  if (redirectTo.startsWith('/posting') || redirectTo === '/dashboard') {
+    return hasMarketingRole(user)
+  }
+  return true
+}
 
 export function Login() {
   const navigate = useNavigate()
@@ -36,9 +52,17 @@ export function Login() {
         parsed.data.password,
       )
       login(session)
-      const redirectTo =
-        searchParams.get('redirectTo') ?? paths.posting.create.getHref()
-      void navigate(redirectTo, { replace: true })
+
+      const redirectParam = searchParams.get('redirectTo')
+      if (redirectParam && canAccessRedirect(session.user, redirectParam)) {
+        void navigate(redirectParam, { replace: true })
+        return
+      }
+
+      void navigate(
+        getDepartmentHomePath(getHomeDepartment(session.user)),
+        { replace: true },
+      )
     } catch {
       setError('Invalid email or password')
     } finally {
@@ -50,7 +74,7 @@ export function Login() {
     <ContentLayout title="Login">
       <AuthCard
         title="Sign In"
-        subtitle="Sign in to manage and publish posts across your connected social platforms."
+        subtitle="One platform · three departments — Platform Admin, Website CMS, and Marketing."
       >
         {error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -84,6 +108,10 @@ export function Login() {
           >
             Sign In
           </Button>
+          <Typography variant="caption" color="text.secondary">
+            Demo (password123): superadmin@posting.local ·
+            cmsadmin@posting.local · marketingadmin@posting.local
+          </Typography>
         </Stack>
       </AuthCard>
     </ContentLayout>

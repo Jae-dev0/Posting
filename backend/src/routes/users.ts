@@ -4,13 +4,23 @@ import { Router } from 'express'
 import { hashPassword } from '../lib/password.js'
 import { prisma } from '../lib/prisma.js'
 import { mapUser } from '../lib/user-mapper.js'
-import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
+import {
+  requireAuth,
+  resolveTenantScope,
+  requireTenantCompany,
+  type AuthenticatedRequest,
+} from '../middleware/auth.js'
 import { requireMainAdmin } from '../middleware/require-main-admin.js'
 import { createUserSchema, updateUserSchema } from '../schemas/users.js'
 
 export const usersRouter = Router()
 
-usersRouter.use(requireAuth, requireMainAdmin)
+usersRouter.use(
+  requireAuth,
+  requireMainAdmin,
+  resolveTenantScope(),
+  requireTenantCompany,
+)
 
 const MAIN_ADMIN_ROLE = UserRole.main_admin
 
@@ -20,11 +30,7 @@ async function countMainAdmins() {
 
 usersRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const companyId = req.user?.companyId
-    if (!companyId) {
-      res.status(403).json({ message: 'Company context required' })
-      return
-    }
+    const companyId = req.tenantCompanyId!
 
     const users = await prisma.user.findMany({
       where: { companyId },
@@ -38,11 +44,7 @@ usersRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
 
 usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const companyId = req.user?.companyId
-    if (!companyId) {
-      res.status(403).json({ message: 'Company context required' })
-      return
-    }
+    const companyId = req.tenantCompanyId!
 
     const body = createUserSchema.parse(req.body)
     const { firstName, lastName, email, password, role } = body
@@ -67,11 +69,7 @@ usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
 
 usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const companyId = req.user?.companyId
-    if (!companyId) {
-      res.status(403).json({ message: 'Company context required' })
-      return
-    }
+    const companyId = req.tenantCompanyId!
 
     const id = Number(req.params.id)
     if (!Number.isInteger(id)) {
@@ -124,11 +122,7 @@ usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
 
 usersRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const companyId = req.user?.companyId
-    if (!companyId) {
-      res.status(403).json({ message: 'Company context required' })
-      return
-    }
+    const companyId = req.tenantCompanyId!
 
     const id = Number(req.params.id)
     if (!Number.isInteger(id)) {

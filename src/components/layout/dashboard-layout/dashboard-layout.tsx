@@ -10,12 +10,12 @@ import {
   Typography,
 } from '@mui/material'
 import { ReactNode, useEffect } from 'react'
+import { IconType } from 'react-icons'
 import { LuLogOut, LuSend } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router'
 
 import jacLinerLogo from '@/assets/jac-liner-logo.svg'
 import { NotificationMenu, UserMenu, UserMenuData } from '@/components/ui'
-import { paths } from '@/config/paths'
 import { useDisclosure } from '@/hooks/use-disclosure'
 
 type DashboardLayoutUser = UserMenuData & {
@@ -33,6 +33,11 @@ export interface DashboardLayoutProps<U extends DashboardLayoutUser> {
   children?: ReactNode
   onLogout?: () => void
   navItems?: ReactNode
+  brandTitle?: string
+  brandHref?: string
+  brandIcon?: IconType
+  roleLabel?: string
+  departmentSwitcher?: ReactNode
 }
 
 export function DashboardLayout<U extends DashboardLayoutUser>({
@@ -40,6 +45,11 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
   children,
   onLogout,
   navItems,
+  brandTitle = 'Social Media Publisher',
+  brandHref = '/',
+  brandIcon: BrandIcon = LuSend,
+  roleLabel = 'User',
+  departmentSwitcher,
 }: DashboardLayoutProps<U>) {
   const { isOpen: isDrawerOpen } = useDisclosure(
     ['true', null].includes(localStorage.getItem('isDrawerOpen')),
@@ -56,7 +66,6 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
         sx={(theme) => ({
           border: 'none',
           color: 'text.primary',
-          // zIndex: theme.zIndex.drawer + 1,
           bgcolor: theme.palette.background.paper,
         })}
       >
@@ -74,7 +83,7 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                   <Link
                     underline="none"
                     component={RouterLink}
-                    to={paths.posting.create.getHref()}
+                    to={brandHref}
                   >
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Box
@@ -89,7 +98,7 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                           justifyContent: 'center',
                         }}
                       >
-                        <LuSend size={14} />
+                        <BrandIcon size={14} />
                       </Box>
                       <Typography
                         variant="h6"
@@ -102,11 +111,12 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                           borderColor: 'border.default',
                         }}
                       >
-                        Social Media Publisher
+                        {brandTitle}
                       </Typography>
                     </Stack>
                   </Link>
-                  <img src={jacLinerLogo} alt="FMS" height={20} />
+                  <img src={jacLinerLogo} alt="Jacliner" height={20} />
+                  {departmentSwitcher}
                 </Stack>
               </Stack>
             </Grid>
@@ -123,7 +133,7 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                 <UserMenu
                   user={user}
                   employeeNumber={user?.company.employeeNumber}
-                  role="Super Admin"
+                  role={roleLabel}
                   footer={
                     <Button
                       onClick={onLogout}
@@ -142,7 +152,7 @@ export function DashboardLayout<U extends DashboardLayoutUser>({
                     {user?.firstName} {user?.lastName}
                   </Typography>
                   <Typography variant="body2" component={Box}>
-                    Position
+                    {roleLabel}
                   </Typography>
                 </Box>
               </Stack>

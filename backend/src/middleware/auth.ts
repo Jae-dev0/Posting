@@ -1,11 +1,48 @@
 import type { NextFunction, Request, Response } from 'express'
 
+import {
+  buildAuthContext,
+  type AuthContextUser,
+  type RoleAssignmentWithRole,
+  userHasPermission,
+} from '../lib/auth-context.js'
 import { verifyAccessToken } from '../lib/jwt.js'
+import type { PermissionName } from '../lib/permissions.js'
 import { prisma } from '../lib/prisma.js'
-import { mapUser } from '../lib/user-mapper.js'
 
 export type AuthenticatedRequest = Request & {
-  user?: ReturnType<typeof mapUser>
+  user?: AuthContextUser
+  /** Resolved tenant for the request (never trust client company_id for non–super-admins). */
+  tenantCompanyId?: number
+}
+
+const assignmentInclude = {
+  role: {
+    include: {
+      permissions: {
+        include: { permission: true },
+      },
+    },
+  },
+} as const
+
+export async function loadAuthContext(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      roleAssignments: { include: assignmentInclude },
+    },
+  })
+
+  if (!user) {
+    return null
+  }
+
+  const { roleAssignments, ...rest } = user
+  return buildAuthContext(
+    rest,
+    roleAssignments as unknown as RoleAssignmentWithRole[],
+  )
 }
 
 export async function requireAuth(
@@ -24,16 +61,118 @@ export async function requireAuth(
 
   try {
     const payload = verifyAccessToken(token)
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } })
+    const authUser = await loadAuthContext(payload.sub)
 
-    if (!user) {
+    if (!authUser) {
       res.status(401).json({ message: 'Invalid or expired token' })
       return
     }
 
-    req.user = mapUser(user)
+    if (authUser.status === 'disabled') {
+      res.status(403).json({ message: 'Account is disabled' })
+      return
+    }
+
+    req.user = authUser
     next()
   } catch {
     res.status(401).json({ message: 'Invalid or expired token' })
   }
+}
+
+export function requirePermission(...permissions: PermissionName[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user
+    if (!user) {
+      res.status(401).json({ message: 'Authentication required' })
+      return
+    }
+
+    const allowed = permissions.every((p) => userHasPermission(user, p))
+    if (!allowed) {
+      res.status(403).json({ message: 'Insufficient permissions' })
+      return
+    }
+
+    next()
+  }
+}
+
+export function requireSuperAdmin(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) {
+  if (!req.user?.isSuperAdmin) {
+    res.status(403).json({ message: 'Super Admin access required' })
+    return
+  }
+  next()
+}
+
+/**
+ * Resolves tenant company for the request.
+ * Super Admin may pass X-Company-Id to act on a tenant.
+ * Everyone else is locked to their home companyId.
+ */
+export function resolveTenantScope(options?: {
+  allowQueryOverrideForSuperAdmin?: boolean
+}) {
+  const allowQuery = options?.allowQueryOverrideForSuperAdmin ?? true
+
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user
+    if (!user) {
+      res.status(401).json({ message: 'Authentication required' })
+      return
+    }
+
+    const headerRaw = req.headers['x-company-id']
+    const headerValue = Array.isArray(headerRaw) ? headerRaw[0] : headerRaw
+    const queryRaw = allowQuery
+      ? (req.query.companyId ?? req.query.company_id)
+      : undefined
+    const requested =
+      headerValue != null && String(headerValue) !== ''
+        ? Number(headerValue)
+        : queryRaw != null && String(queryRaw) !== ''
+          ? Number(queryRaw)
+          : undefined
+
+    if (user.isSuperAdmin) {
+      if (requested != null) {
+        if (!Number.isInteger(requested) || requested <= 0) {
+          res.status(400).json({ message: 'Invalid company id' })
+          return
+        }
+        req.tenantCompanyId = requested
+      } else {
+        req.tenantCompanyId = user.companyId
+      }
+      next()
+      return
+    }
+
+    if (requested != null && requested !== user.companyId) {
+      res.status(403).json({
+        message: 'Access to another company is not allowed',
+      })
+      return
+    }
+
+    req.tenantCompanyId = user.companyId
+    next()
+  }
+}
+
+export function requireTenantCompany(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) {
+  if (!req.tenantCompanyId) {
+    res.status(403).json({ message: 'Company context required' })
+    return
+  }
+  next()
 }

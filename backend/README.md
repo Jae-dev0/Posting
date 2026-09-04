@@ -16,14 +16,15 @@ Express + Prisma + PostgreSQL backend for the Social Media Publisher UI.
 | POST | `/api/auth/login` | Sign in |
 | GET | `/api/auth/me` | Current user (Bearer token) |
 
-Seeded users (after seed):
+Seeded admins (after seed):
 
-| Role | Email | Password |
-|------|-------|----------|
-| Main admin | `mainadmin@posting.local` | `password123` |
-| Admin | `admin@posting.local` | `password123` |
+| Role | Email | Password | Area |
+|------|-------|----------|------|
+| Super Admin | `superadmin@posting.local` | `password123` | Overall / Platform |
+| CMS Admin | `cmsadmin@posting.local` | `password123` | Website CMS |
+| Marketing Admin | `marketingadmin@posting.local` | `password123` | Marketing |
 
-Main admins can manage connected accounts and app users; admins cannot.
+Marketing Admin can manage connected accounts and Marketing users.
 
 Facebook / Meta Graph setup: see [`META_FACEBOOK.md`](./META_FACEBOOK.md).
 

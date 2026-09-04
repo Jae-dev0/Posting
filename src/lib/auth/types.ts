@@ -10,6 +10,15 @@ export type AuthUser = {
   role: UserRole
   companyId: number
   createdAt: string
+  status?: 'active' | 'disabled'
+  isSuperAdmin?: boolean
+  permissions?: string[]
+  roleAssignments?: Array<{
+    roleId: number
+    roleName: string
+    scope: 'platform' | 'company'
+    companyId: number | null
+  }>
 }
 
 export type AuthSession = {
