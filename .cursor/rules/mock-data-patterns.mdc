@@ -1,0 +1,61 @@
+---
+description: Patterns for feature mock data and Status-driven UI before a backend API exists. Use when wiring lists/tables from mock-*.ts files.
+globs: "**/mock-*.ts,src/app/routes/**/*.tsx,src/features/**/*.tsx"
+alwaysApply: false
+---
+
+# Mock Data Patterns (interim — no API yet)
+
+**When to apply**: A feature has no `src/features/<feature>/api/` hooks yet and uses `mock-*.ts` (or similar) for list/table UI.
+
+**Does NOT apply**: Apps with a live `@jacliner/*-api-ts-client` wired for that feature — use `api-query-hooks-patterns.mdc` instead.
+
+## File layout
+
+```
+src/features/<feature>/
+├── components/
+│   ├── mock-<feature>-data.ts   # data + types co-located
+│   └── <feature>-tables.tsx     # presentational; accepts data + status
+└── index.ts                     # barrel exports
+```
+
+- Name mocks `mock-<descriptive-name>.ts` (kebab-case after `mock-`).
+- Export typed arrays/objects from the mock file; pages import from the feature barrel.
+
+## Page / route wiring
+
+Routes own data wiring; table components stay presentational.
+
+```tsx
+// ✅ Good — route passes data + explicit status
+import { mockItems, ItemTables } from '@/features/items'
+
+export function ItemsPage() {
+  const data = mockItems
+  const status = 'success' as const // use 'pending' | 'error' while building states
+
+  return <ItemTables data={data} status={status} onView={() => {}} />
+}
+```
+
+```tsx
+// ❌ Bad — table fetches or imports mocks internally
+function ItemTables() {
+  const data = mockItems // hides loading/error contract from parent
+}
+```
+
+## Status contract
+
+- Use the shared `Status` type (`'pending' | 'error' | 'success'`) on list/table components.
+- Build **all three** UI states now (even if mocks only use `'success'` today) so swapping to `useQuery` is a **route-level** change later.
+- Follow `react-query-status-handling.mdc` and `consistent-return-shape.mdc`.
+
+## Migrating to React Query
+
+When the backend is ready:
+
+1. Add `src/features/<feature>/api/` with hooks per `api-query-hooks-patterns.mdc` and `jacliner-api-client-patterns.mdc`.
+2. Replace mock imports in the **route** with `useQuery` / `useMutation`.
+3. Pass `status` from the query into the same presentational components — avoid rewriting table markup.

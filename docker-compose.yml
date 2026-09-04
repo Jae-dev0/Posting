@@ -1,0 +1,72 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: posting
+      POSTGRES_PASSWORD: posting
+      POSTGRES_DB: posting
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - posting_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U posting -d posting']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    ports:
+      - '${API_PORT:-3001}:3001'
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      DATABASE_URL: postgresql://posting:posting@db:5432/posting
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      META_REDIRECT_URI: ${META_REDIRECT_URI:-http://localhost:3001/api/social/facebook/callback}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-v22.0}
+      META_OAUTH_SCOPES: ${META_OAUTH_SCOPES:-public_profile,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content}
+      META_INSTAGRAM_OAUTH_SCOPES: ${META_INSTAGRAM_OAUTH_SCOPES:-instagram_basic,instagram_content_publish,instagram_manage_comments,pages_show_list,pages_read_engagement,business_management,public_profile}
+      PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-}
+      SEED_DATABASE: ${SEED_DATABASE:-true}
+    volumes:
+      - posting_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      secrets:
+        - npm-token
+      args:
+        # Same-origin API via nginx `/api` proxy — do not point at localhost:3001 here.
+        VITE_APP_API_URL: ''
+        VITE_APP_KEYCLOAK_URL: ${VITE_APP_KEYCLOAK_URL:-http://localhost:8080}
+        VITE_APP_KEYCLOAK_REALM: ${VITE_APP_KEYCLOAK_REALM:-master}
+        VITE_APP_KEYCLOAK_CLIENT_ID: ${VITE_APP_KEYCLOAK_CLIENT_ID:-dev-client}
+        VITE_APP_AUTH_BYPASS: ${VITE_APP_AUTH_BYPASS:-false}
+    restart: unless-stopped
+    ports:
+      - '${DOCKER_APP_PORT:-3000}:80'
+    depends_on:
+      - api
+
+volumes:
+  posting_pgdata:
+  posting_uploads:
+
+secrets:
+  npm-token:
+    file: ./docker/node/npm-token.txt

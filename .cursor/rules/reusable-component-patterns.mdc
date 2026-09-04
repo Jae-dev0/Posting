@@ -1,0 +1,148 @@
+---
+description: Patterns for creating reusable UI components that behave like native HTML elements with custom defaults.
+globs: "src/components/**/*.tsx"
+alwaysApply: false
+---
+
+# Reusable Component Patterns
+
+**When to apply**: When creating a component intended to be consumed like a native element -- design system primitives, shared selects, styled wrappers, etc. The AI should recognize this intent based on context.
+
+**Does NOT apply to**: Page/route components, providers, context wrappers, or feature-specific components not meant to be reused as primitives.
+
+## Design Philosophy
+
+Reusable components should feel like native elements: accept `ref`, spread all non-specific props onto the root element, and allow full consumer customization. If a consumer can't override it, it's over-encapsulated.
+
+## Ref Forwarding
+
+> **React version**: The pattern below applies to **React 19+**, where `ref` is a regular prop.
+> For **React 18**, use `forwardRef` (shown in the alternative below).
+
+### React 19 — ref as a plain prop (preferred for React 19+ projects)
+
+No `forwardRef`. Pass `ref` as a regular prop. Omit `'ref'` from the extended base type, then re-declare it.
+
+Always use `React.ComponentRef<typeof Component>` to infer the ref element type from the wrapped component — never hardcode a DOM type like `HTMLDivElement`.
+
+```tsx
+// ✅ React 19 — ref as prop (replace BaseButtonProps / BaseButton with your library's types)
+export type ButtonProps = Omit<BaseButtonProps, 'ref'> & {
+  ref?: React.Ref<React.ComponentRef<typeof BaseButton>>
+}
+
+export function Button({ ref, ...props }: ButtonProps) {
+  return <BaseButton ref={ref} {...props} />
+}
+```
+
+### React 18 — forwardRef (use when targeting React 18)
+
+```tsx
+// ✅ React 18 — use forwardRef
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  return <BaseButton ref={ref} {...props} />
+})
+Button.displayName = 'Button'
+```
+
+```tsx
+// ❌ Bad on React 19 — legacy pattern not needed when ref is a plain prop
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  return <BaseButton ref={ref} {...props} />
+})
+Button.displayName = 'Button'
+```
+
+## Props Pattern
+
+Extend the underlying element/component props. Only destructure props that need component-specific logic -- spread everything else:
+
+```tsx
+// ✅ Good: only destructure what you transform
+export function SearchInput({ onSearch, ref, ...inputProps }: SearchInputProps) {
+  const handleChange = (e) => onSearch(e.target.value)
+  return <input ref={ref} onChange={handleChange} {...inputProps} />
+}
+
+// ❌ Bad: destructuring props just to pass them through
+export function SearchInput({ onSearch, disabled, placeholder, ref, ...rest }: SearchInputProps) {
+  return <input ref={ref} disabled={disabled} placeholder={placeholder} {...rest} />
+}
+```
+
+## Merging Default Slot/Style Props
+
+> **Design system note**: This section shows an MUI-specific utility. Adapt it to your design system's equivalent.
+
+### MUI — `mergeSlotProps`
+
+When wrapping an MUI component, use `mergeSlotProps` so your defaults remain overridable by the consumer:
+
+```tsx
+import { mergeSlotProps, CardHeader as MuiCardHeader } from '@mui/material'
+
+export function CardPageHeader(props: CardPageHeaderProps) {
+  return (
+    <MuiCardHeader
+      {...props}
+      slotProps={{
+        ...props.slotProps,
+        title: mergeSlotProps(props.slotProps?.title, {
+          variant: 'body1',
+          sx: { fontWeight: (theme) => theme.typography.fontWeightBold },
+        }),
+      }}
+    />
+  )
+}
+```
+
+### Other design systems
+
+| Design System | Equivalent pattern |
+|---|---|
+| Radix UI | Use the `asChild` prop to delegate rendering to the consumer's element |
+| Chakra UI | Use `styleConfig` or spread `__css` defaults before consumer props |
+| Plain HTML / CSS | Merge `className` strings (e.g. with `clsx`) and spread `style` after defaults |
+
+The universal rule: **always place your default props before consumer props so consumers can override them.**
+
+```tsx
+// ✅ Generic — defaults first, consumer overrides second
+export function Card({ className, style, ...props }: CardProps) {
+  return (
+    <div
+      className={clsx('card-base', className)}
+      style={{ borderRadius: 8, ...style }}
+      {...props}
+    />
+  )
+}
+```
+
+## File & Folder Structure
+
+```
+component-name/
+├── index.ts          # Re-export only: export * from './component-name'
+└── component-name.tsx
+```
+
+Register in the nearest parent barrel `index.ts`:
+
+```ts
+// index.ts
+export * from './component-name'
+```
+
+## Exports
+
+Use named exports. Export the component and its props type together at the bottom:
+
+```tsx
+export { ComponentName, type ComponentNameProps }
+// or equivalently:
+export function ComponentName(...) { ... }
+export type { ComponentNameProps }
+```

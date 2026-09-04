@@ -1,0 +1,54 @@
+---
+description: Patterns for @jacliner/*-api-ts-client — OpenAPI types, lib clients, Zod schemas, and feature api/ hooks.
+globs: "src/features/**/api/**/*.ts,src/lib/openapi-client.ts,src/lib/api-client.ts,src/lib/schemas/**,src/lib/query-keys/**"
+alwaysApply: false
+---
+
+# Jacliner API Client Patterns
+
+**When to apply**: This repo has a `@jacliner/*-api-ts-client` dependency and you are adding or changing API hooks, query keys, or OpenAPI wiring.
+
+**When to skip**: No Jacliner client in `package.json` — use `mock-data-patterns.mdc` until a client is added.
+
+## Package and imports
+
+- Request/filter types: import from `@jacliner/<domain>-api-ts-client` (e.g. `FleetsApiListFleetsRequest`).
+- API instances: import from `@/lib/openapi-client` or `@/lib/api-client` — do not construct `Configuration` in feature code.
+- Response shapes: validate with Zod in `src/lib/schemas` or co-located schemas; use `schema.parse(res.data)`.
+
+```ts
+import type { FleetsApiListFleetsRequest } from '@jacliner/fleet-inventory-api-ts-client'
+import { fleetsApi } from '@/lib/openapi-client'
+import { fleetsKeys } from '@/lib/query-keys'
+```
+
+## Feature `api/` layout
+
+```
+src/features/<feature>/api/
+├── query-keys.ts      # optional if keys live in @/lib/query-keys/<domain>
+├── use-list-<entity>.ts
+├── use-create-<entity>.ts
+└── index.ts           # barrel — required
+```
+
+- Hook file names: `use-<verb>-<entity>.ts` (kebab-case).
+- Follow structural rules in `api-query-hooks-patterns.mdc` (extracted `queryFn`, options passthrough, signal).
+
+## Query keys
+
+- Prefer centralized factories under `src/lib/query-keys/` (grouped by domain) when the app already uses that layout.
+- Keys must include filter objects for list queries: `list: (filters) => [...]`.
+
+## Multiple clients (e.g. crew + EMS)
+
+When `package.json` has more than one `@jacliner/*` client:
+
+- Use **crew** client types/instances for crew-domain endpoints only.
+- Use **EMS** client for shared employee/org endpoints only.
+- Never mix request types or API instances across domains.
+
+## Components and routes
+
+- Route files may import **request types** for filter state; data fetching stays in hooks or route-level `useQuery`.
+- Shared selects/comboboxes: accept filter types from the client package for typed API params.

@@ -1,0 +1,51 @@
+---
+description: Recommend consistent root element return shape across component state branches
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Consistent Return Shape
+
+Components should prefer returning the **same root element type** regardless of internal state. State branching should happen *inside* the consistent structure via an internal render helper, rather than returning entirely different component trees at the top level.
+
+## Avoid
+
+```tsx
+// ❌ Avoid — three different root elements; consumer cannot predict what they receive
+function ItemList({ data, status, error }: Props) {
+  if (status === 'pending') return <ListSkeleton />
+  if (status === 'error') return <Alert severity="error">{error.message}</Alert>
+
+  return <ul>{data.map((item) => <li key={item.id}>{item.name}</li>)}</ul>
+}
+```
+
+## Preferred Pattern
+
+```tsx
+// ✅ Preferred — always returns <Card>; only the inner content varies by state
+function ItemList({ data, status }: Props) {
+  const renderContent = () => {
+    if (status === 'pending') return <LoadingSkeleton />
+    if (status === 'error') return <ErrorMessage />
+    if (!data || data.length === 0) return <EmptyState />
+
+    return data.map((item) => <ItemRow key={item.id} item={item} />)
+  }
+
+  return (
+    <Card>
+      <CardHeader title="Items" />
+      <CardContent>{renderContent()}</CardContent>
+    </Card>
+  )
+}
+```
+
+The root `<Card>` is always returned. State handling is fully encapsulated inside `renderContent()`.
+
+## Guidelines
+
+1. Prefer a consistent root structure — vary internal content via a render helper, not the root element
+2. Use an internal render helper (e.g., `renderContent()`, `renderBody()`) to encapsulate state branching
+3. Early returns with different root types are acceptable for page-level components or when the component is intentionally designed to swap layouts (e.g., a full-page skeleton replacing the entire page shell)

@@ -1,0 +1,137 @@
+---
+description: Patterns for React Query useMutation hooks — Zod validation, cache invalidation, and options passthrough.
+globs: "src/features/**/api/**/*.ts"
+alwaysApply: false
+---
+
+# API Mutation Hook Patterns
+
+**When to apply**: When creating a React Query `useMutation` hook for create, update, or delete API operations.
+
+**Pair with**: `jacliner-api-client-patterns.mdc` for OpenAPI client imports and query keys.
+
+## Full Pattern (create)
+
+```ts
+import type { EntityCreateRequest } from '@jacliner/<domain>-api-ts-client'
+import type { UseMutationOptions } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { z } from 'zod'
+
+import { entitiesApi } from '@/lib/openapi-client'
+import { entityKeys } from '@/lib/query-keys'
+import { Entity, entitySchemas, createDataResponseSchema } from '@/lib/schemas'
+
+export const createEntityResponseSchema = createDataResponseSchema(entitySchemas)
+
+export type CreateEntityResponse = z.infer<typeof createEntityResponseSchema>
+
+export type UseCreateEntityOptions = Omit<
+  UseMutationOptions<Entity, Error, EntityCreateRequest>,
+  'mutationFn'
+>
+
+export const useCreateEntity = (options?: UseCreateEntityOptions) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: EntityCreateRequest) => {
+      const res = await entitiesApi.createEntity({ data })
+      const parsed = createEntityResponseSchema.parse(res.data)
+      return parsed.data
+    },
+    ...options,
+    onSuccess: (data, variables, context, mutation) => {
+      queryClient
+        .invalidateQueries({ queryKey: entityKeys.lists() })
+        .catch(console.error)
+      options?.onSuccess?.(data, variables, context, mutation)
+    },
+  })
+}
+```
+
+## Full Pattern (update)
+
+For updates with path params, use a `Variables` type:
+
+```ts
+export type UpdateEntityVariables = {
+  entityId: number
+  data: EntityUpdateRequest
+}
+
+export const useUpdateEntity = (options?: UseUpdateEntityOptions) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ entityId, data }: UpdateEntityVariables) => {
+      const res = await entitiesApi.updateEntity({ entityId, data })
+      const parsed = updateEntityResponseSchema.parse(res.data)
+      return parsed.data
+    },
+    ...options,
+    onSuccess: (data, variables, context, mutation) => {
+      queryClient
+        .invalidateQueries({ queryKey: entityKeys.lists() })
+        .catch(console.error)
+      queryClient
+        .invalidateQueries({ queryKey: entityKeys.detail(variables.entityId) })
+        .catch(console.error)
+      options?.onSuccess?.(data, variables, context, mutation)
+    },
+  })
+}
+```
+
+## Full Pattern (delete)
+
+Delete mutations may return `void` — no Zod parse on response when the API returns empty:
+
+```ts
+export const useDeleteEntity = (options?: UseDeleteEntityOptions) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (entityId: number) => {
+      await entitiesApi.deleteEntity({ entityId })
+    },
+    ...options,
+    onSuccess: (data, variables, context, mutation) => {
+      queryClient
+        .invalidateQueries({ queryKey: entityKeys.lists() })
+        .catch(console.error)
+      options?.onSuccess?.(data, variables, context, mutation)
+    },
+  })
+}
+```
+
+## Key Rules
+
+- **Zod parse when API returns data**: Use `createDataResponseSchema` or co-located schema; return `parsed.data` to callers.
+- **Extract types from schema**: `z.infer<typeof createEntityResponseSchema>` — no manual response type duplication.
+- **Options passthrough**: Spread `...options` before overriding `onSuccess` so callers can pass `onSuccess`, `onError`, etc.
+- **Chain `onSuccess`**: Always call `options?.onSuccess?.(...)` after cache invalidation.
+- **Invalidate list keys**: Always `invalidateQueries({ queryKey: entityKeys.lists() })` on success.
+- **Invalidate detail on update**: Also invalidate `entityKeys.detail(id)` when an update affects a single record.
+- **`.catch(console.error)` on invalidate**: Avoid unhandled promise rejections from `invalidateQueries`.
+- **Centralized query keys**: Import from `@/lib/query-keys` — never define keys inline in mutation hooks.
+- **File naming**: `use-create-<entity>.ts`, `use-update-<entity>.ts`, `use-delete-<entity>.ts` (kebab-case).
+- **Barrel exports**: Re-export all mutation hooks from `api/index.ts`.
+
+## Hook Options Type
+
+```ts
+export type UseCreateEntityOptions = Omit<
+  UseMutationOptions<Entity, Error, EntityCreateRequest>,
+  'mutationFn'
+>
+```
+
+Use `Omit<..., 'mutationFn'>` so callers cannot override the mutation function.
+
+## Components and Routes
+
+- Form dialogs call `mutate` from these hooks — they do not call the API client directly.
+- Snackbar success/error handling belongs in the component (`onSuccess` / `onError` passed to the hook), not inside the hook file unless shared across all call sites.
