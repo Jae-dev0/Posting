@@ -47,7 +47,14 @@ usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
     const companyId = req.tenantCompanyId!
 
     const body = createUserSchema.parse(req.body)
-    const { firstName, lastName, email, password, role } = body
+    const { firstName, lastName, email, password } = body
+    // Marketing Admin may only create Marketing Sub Admins (`admin`).
+    // Super Admin may also create Marketing Admins (`main_admin`).
+    const role =
+      req.user?.isSuperAdmin && body.role === MAIN_ADMIN_ROLE
+        ? MAIN_ADMIN_ROLE
+        : UserRole.admin
+
     const passwordHash = await hashPassword(password)
 
     const user = await prisma.user.create({
@@ -82,6 +89,16 @@ usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
 
     if (!existing) {
       res.status(404).json({ message: 'User not found' })
+      return
+    }
+
+    const isPromotingToMainAdmin =
+      body.role === MAIN_ADMIN_ROLE && existing.role !== MAIN_ADMIN_ROLE
+
+    if (isPromotingToMainAdmin && !req.user?.isSuperAdmin) {
+      res.status(403).json({
+        message: 'Only Super Admin can promote a Marketing Sub Admin',
+      })
       return
     }
 

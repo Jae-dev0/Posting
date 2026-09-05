@@ -13,6 +13,7 @@ import {
   LuImage,
   LuMenu,
   LuSettings,
+  LuUsers,
 } from 'react-icons/lu'
 import { Link as RouterLink, useLocation } from 'react-router'
 
@@ -54,6 +55,12 @@ const navItems: NavItem[] = [
     href: paths.cms.navigation.getHref(),
     icon: LuMenu,
     permission: PERMISSIONS.CMS_EDIT,
+  },
+  {
+    label: 'Users',
+    href: paths.cms.users.getHref(),
+    icon: LuUsers,
+    permission: PERMISSIONS.USER_VIEW,
   },
   {
     label: 'Website Settings',

@@ -6,4 +6,5 @@ export const cmsKeys = {
   media: () => [...cmsKeys.all, 'media'] as const,
   navigation: () => [...cmsKeys.all, 'navigation'] as const,
   settings: () => [...cmsKeys.all, 'settings'] as const,
+  users: () => [...cmsKeys.all, 'users'] as const,
 }

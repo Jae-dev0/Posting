@@ -13,9 +13,14 @@ import {
 import { FormEvent, useEffect, useState } from 'react'
 
 import { useSnackbar } from '@/lib/mui/snackbar-hooks'
+import { useIsSuperAdmin } from '@/lib/auth'
 
 import { useCreateUser, useUpdateUser, type ManagedUser } from '../../api'
-import { USER_ROLE, USER_ROLE_OPTIONS } from '../../constants'
+import {
+  MARKETING_SUB_ADMIN_OPTIONS,
+  USER_ROLE,
+  USER_ROLE_OPTIONS,
+} from '../../constants'
 import { getApiErrorMessage } from '../../lib/get-api-error-message'
 
 import {
@@ -47,9 +52,14 @@ export function UserFormDialog({
   dialogProps,
 }: UserFormDialogProps) {
   const { showSuccess, showError } = useSnackbar()
+  const isSuperAdmin = useIsSuperAdmin()
   const isEditMode = Boolean(user)
   const [values, setValues] = useState<UserFormValues>(emptyFormValues)
   const [error, setError] = useState<string | null>(null)
+
+  const roleOptions = isSuperAdmin
+    ? USER_ROLE_OPTIONS
+    : MARKETING_SUB_ADMIN_OPTIONS
 
   useEffect(() => {
     if (!open) return
@@ -64,7 +74,10 @@ export function UserFormDialog({
         confirmPassword: '',
       })
     } else {
-      setValues(emptyFormValues)
+      setValues({
+        ...emptyFormValues,
+        role: USER_ROLE.ADMIN,
+      })
     }
     setError(null)
   }, [open, user])
@@ -90,11 +103,11 @@ export function UserFormDialog({
   })
 
   const isSubmitting = isCreatePending || isUpdatePending
-  const title = isEditMode ? 'Edit Account' : 'Create Account'
+  const title = isEditMode ? 'Edit Account' : 'Create Marketing Sub Admin'
   const subtitle = isEditMode
-    ? 'Update this admin account details and access level.'
-    : 'Add a new admin account that can sign in to the publisher.'
-  const submitLabel = isEditMode ? 'Update Account' : 'Create Account'
+    ? 'Update this Marketing account details and access level.'
+    : 'Add a Marketing Sub Admin who can use Marketing only.'
+  const submitLabel = isEditMode ? 'Update Account' : 'Create Sub Admin'
 
   const updateField = <K extends keyof UserFormValues>(
     field: K,
@@ -212,7 +225,7 @@ export function UserFormDialog({
             }}
             fullWidth
           >
-            {USER_ROLE_OPTIONS.map((option) => (
+            {roleOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>

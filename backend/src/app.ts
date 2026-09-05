@@ -10,6 +10,7 @@ import { analyticsRouter } from './routes/analytics.js'
 import { auditRouter } from './routes/audit.js'
 import { authRouter } from './routes/auth.js'
 import { cmsRouter } from './routes/cms.js'
+import { cmsUsersRouter } from './routes/cms-users.js'
 import { companiesRouter } from './routes/companies.js'
 import { healthRouter } from './routes/health.js'
 import { mediaRouter } from './routes/media.js'
@@ -46,6 +47,7 @@ export function createApp() {
   app.use('/api/audit', auditRouter)
   app.use('/api/roles', rolesRouter)
   app.use('/api/cms', cmsRouter)
+  app.use('/api/cms/users', cmsUsersRouter)
 
   app.use((req, res) => {
     res.status(404).json({ message: `Route not found: ${req.method} ${req.path}` })

@@ -100,6 +100,10 @@ export const paths = {
       path: '/cms/settings',
       getHref: () => '/cms/settings',
     },
+    users: {
+      path: '/cms/users',
+      getHref: () => '/cms/users',
+    },
   },
   posting: {
     root: {

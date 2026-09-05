@@ -32,6 +32,7 @@ import {
   CmsNavigationPage,
   CmsPagesPage,
   CmsSettingsPage,
+  CmsUsersPage,
 } from './routes/cms'
 import { Login } from './routes/auth'
 import { Dashboard } from './routes/dashboard'
@@ -309,6 +310,14 @@ const protectedRoutes = createBrowserRouter([
             element: (
               <RequirePermission permission={PERMISSIONS.SETTINGS_VIEW}>
                 <CmsSettingsPage />
+              </RequirePermission>
+            ),
+          },
+          {
+            path: 'users',
+            element: (
+              <RequirePermission permission={PERMISSIONS.USER_VIEW}>
+                <CmsUsersPage />
               </RequirePermission>
             ),
           },

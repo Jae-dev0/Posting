@@ -12,6 +12,7 @@ const prisma = new PrismaClient()
 const ROLE_NAMES = {
   SUPER_ADMIN: 'super_admin',
   CMS_ADMIN: 'company_admin', // internal key kept for compatibility
+  CMS_SUB_ADMIN: 'cms_sub_admin',
   MARKETING_ADMIN: 'marketing_admin',
 } as const
 
@@ -57,6 +58,19 @@ const CMS_ADMIN_PERMISSIONS = [
   'settings.view',
   'settings.edit',
   'audit.view',
+  'user.view',
+  'user.create',
+  'user.edit',
+  'user.delete',
+] as const
+
+const CMS_SUB_ADMIN_PERMISSIONS = [
+  'cms.view',
+  'cms.create',
+  'cms.edit',
+  'cms.delete',
+  'cms.publish',
+  'settings.view',
 ] as const
 
 const MARKETING_ADMIN_PERMISSIONS = ['marketing.access'] as const
@@ -101,11 +115,11 @@ async function ensureRbacCatalog() {
     where: { name: ROLE_NAMES.SUPER_ADMIN },
     create: {
       name: ROLE_NAMES.SUPER_ADMIN,
-      description: 'Super Admin — overall platform access',
+      description: 'Super Admin — overall platform access; sees all accounts',
       scope: RoleScope.platform,
     },
     update: {
-      description: 'Super Admin — overall platform access',
+      description: 'Super Admin — overall platform access; sees all accounts',
       scope: RoleScope.platform,
     },
   })
@@ -114,11 +128,24 @@ async function ensureRbacCatalog() {
     where: { name: ROLE_NAMES.CMS_ADMIN },
     create: {
       name: ROLE_NAMES.CMS_ADMIN,
-      description: 'CMS Admin — Website CMS for assigned company',
+      description: 'CMS Admin — Website CMS + create CMS sub-admins',
       scope: RoleScope.company,
     },
     update: {
-      description: 'CMS Admin — Website CMS for assigned company',
+      description: 'CMS Admin — Website CMS + create CMS sub-admins',
+      scope: RoleScope.company,
+    },
+  })
+
+  const cmsSubAdmin = await prisma.role.upsert({
+    where: { name: ROLE_NAMES.CMS_SUB_ADMIN },
+    create: {
+      name: ROLE_NAMES.CMS_SUB_ADMIN,
+      description: 'CMS Sub Admin — CMS content only',
+      scope: RoleScope.company,
+    },
+    update: {
+      description: 'CMS Sub Admin — CMS content only',
       scope: RoleScope.company,
     },
   })
@@ -127,11 +154,11 @@ async function ensureRbacCatalog() {
     where: { name: ROLE_NAMES.MARKETING_ADMIN },
     create: {
       name: ROLE_NAMES.MARKETING_ADMIN,
-      description: 'Marketing Admin — Marketing / Social Media Publisher',
+      description: 'Marketing Admin — Marketing + create Marketing sub-admins',
       scope: RoleScope.company,
     },
     update: {
-      description: 'Marketing Admin — Marketing / Social Media Publisher',
+      description: 'Marketing Admin — Marketing + create Marketing sub-admins',
       scope: RoleScope.company,
     },
   })
@@ -153,13 +180,14 @@ async function ensureRbacCatalog() {
   }
 
   await ensureRolePermissions(cmsAdmin.id, CMS_ADMIN_PERMISSIONS, byName)
+  await ensureRolePermissions(cmsSubAdmin.id, CMS_SUB_ADMIN_PERMISSIONS, byName)
   await ensureRolePermissions(
     marketingAdmin.id,
     MARKETING_ADMIN_PERMISSIONS,
     byName,
   )
 
-  return { superAdmin, cmsAdmin, marketingAdmin }
+  return { superAdmin, cmsAdmin, cmsSubAdmin, marketingAdmin }
 }
 
 async function ensureDefaultWebsite(

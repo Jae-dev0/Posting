@@ -57,7 +57,7 @@ export function PlatformUsersPage() {
       toolbarTitle="Users"
       toolbarDescription={
         <ListPageShowingCount count={status === 'success' ? total : 0}>
-          platform users.
+          accounts across all companies.
         </ListPageShowingCount>
       }
       pagedTable={
@@ -104,6 +104,18 @@ type UsersTablesProps = {
   errorMessage?: string
 }
 
+function getAccountDepartment(user: PlatformUser): string {
+  const roleNames = user.platformRoles.map((r) => r.roleName)
+  if (roleNames.includes('super_admin')) return 'Super Admin'
+  if (roleNames.includes('company_admin')) return 'CMS Admin'
+  if (roleNames.includes('cms_sub_admin')) return 'CMS Sub Admin'
+  if (roleNames.includes('marketing_admin') || user.marketingRole === 'main_admin') {
+    return 'Marketing Admin'
+  }
+  if (user.marketingRole === 'admin') return 'Marketing Sub Admin'
+  return 'User'
+}
+
 function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
   if (status === 'pending') {
     return (
@@ -139,8 +151,8 @@ function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
           <TableCell>Name</TableCell>
           <TableCell>Email</TableCell>
           <TableCell>Company</TableCell>
-          <TableCell>Marketing role</TableCell>
-          <TableCell>Platform roles</TableCell>
+          <TableCell>Department</TableCell>
+          <TableCell>Roles</TableCell>
           <TableCell>Status</TableCell>
         </TableRow>
       </TableHead>
@@ -151,7 +163,6 @@ function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
             fullname,
             email,
             company,
-            marketingRole,
             platformRoles,
             status: userStatus,
           } = user
@@ -160,7 +171,14 @@ function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
               <TableCell>{fullname}</TableCell>
               <TableCell>{email}</TableCell>
               <TableCell>{company.name}</TableCell>
-              <TableCell>{marketingRole}</TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  label={getAccountDepartment(user)}
+                />
+              </TableCell>
               <TableCell>
                 {platformRoles.map((r) => r.roleName).join(', ') || '—'}
               </TableCell>

@@ -1,9 +1,19 @@
-import { Alert, Button, Stack, TextField, Typography } from '@mui/material'
-import { FormEvent, useState } from 'react'
+import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  Alert,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Stack,
+  TextField,
+} from '@mui/material'
+import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router'
 
 import { ContentLayout } from '@/components/layout'
 import { AuthCard } from '@/features/auth'
+import { loginRequest } from '@/lib/auth/api'
 import {
   getDepartmentHomePath,
   getHomeDepartment,
@@ -11,15 +21,30 @@ import {
   hasMarketingRole,
   hasPlatformRole,
 } from '@/lib/auth/departments'
-import { loginRequest } from '@/lib/auth/api'
 import { useAuth } from '@/lib/auth/hooks'
-import { loginFormSchema } from '@/lib/auth/schemas'
+import { loginFormSchema, type LoginFormValues } from '@/lib/auth/schemas'
 import type { AuthUser } from '@/lib/auth/types'
 
+const REDIRECT_PREFIX_PLATFORM = '/platform'
+const REDIRECT_PREFIX_CMS = '/cms'
+const REDIRECT_PREFIX_POSTING = '/posting'
+const REDIRECT_PATH_DASHBOARD = '/dashboard'
+
+const INPUT_BORDER_RADIUS_PX = 12
+const BUTTON_HEIGHT_PX = 48
+const SPACING_FORM_GAP = 2.5
+
 function canAccessRedirect(user: AuthUser, redirectTo: string) {
-  if (redirectTo.startsWith('/platform')) return hasPlatformRole(user)
-  if (redirectTo.startsWith('/cms')) return hasCmsRole(user)
-  if (redirectTo.startsWith('/posting') || redirectTo === '/dashboard') {
+  if (redirectTo.startsWith(REDIRECT_PREFIX_PLATFORM)) {
+    return hasPlatformRole(user)
+  }
+  if (redirectTo.startsWith(REDIRECT_PREFIX_CMS)) {
+    return hasCmsRole(user)
+  }
+  if (
+    redirectTo.startsWith(REDIRECT_PREFIX_POSTING) ||
+    redirectTo === REDIRECT_PATH_DASHBOARD
+  ) {
     return hasMarketingRole(user)
   }
   return true
@@ -29,28 +54,35 @@ export function Login() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { login } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [rememberMe, setRememberMe] = useState(false)
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
+  const {
+    control,
+    handleSubmit,
+    formState,
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
 
-    const parsed = loginFormSchema.safeParse({ email, password })
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Invalid form input')
-      return
-    }
+  const { errors, isSubmitting } = formState
 
-    setIsSubmitting(true)
+  const handleRememberMeChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setRememberMe(event.target.checked)
+  }
+
+  const onSubmit = async (values: LoginFormValues) => {
+    const { email, password } = values
+    setAuthError(null)
 
     try {
-      const session = await loginRequest(
-        parsed.data.email,
-        parsed.data.password,
-      )
+      const session = await loginRequest(email, password)
       login(session)
 
       const redirectParam = searchParams.get('redirectTo')
@@ -59,61 +91,121 @@ export function Login() {
         return
       }
 
-      void navigate(
-        getDepartmentHomePath(getHomeDepartment(session.user)),
-        { replace: true },
-      )
+      const userDepartment = getHomeDepartment(session.user)
+      const homePath = getDepartmentHomePath(userDepartment)
+      void navigate(homePath, { replace: true })
     } catch {
-      setError('Invalid email or password')
-    } finally {
-      setIsSubmitting(false)
+      setAuthError('Invalid email or password')
     }
   }
 
   return (
     <ContentLayout title="Login">
-      <AuthCard
-        title="Sign In"
-        subtitle="One platform · three departments — Platform Admin, Website CMS, and Marketing."
-      >
-        {error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+      <AuthCard title="Content Management System" hideLogo hideFooter>
+        {authError ? (
+          <Alert
+            severity="error"
+            sx={{ mb: 2, borderRadius: `${INPUT_BORDER_RADIUS_PX}px` }}
+          >
+            {authError}
           </Alert>
         ) : null}
 
-        <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-          <TextField
-            label="Email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            fullWidth
+        <Stack
+          component="form"
+          spacing={SPACING_FORM_GAP}
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Username"
+                type="email"
+                autoComplete="username"
+                fullWidth
+                error={Boolean(errors.email)}
+                helperText={errors.email?.message}
+                slotProps={{
+                  input: {
+                    sx: {
+                      borderRadius: `${INPUT_BORDER_RADIUS_PX}px`,
+                      height: BUTTON_HEIGHT_PX,
+                      '&:-webkit-autofill': {
+                        WebkitBoxShadow: '0 0 0 1000px #ffffff inset !important',
+                        WebkitTextFillColor: 'inherit !important',
+                      },
+                    },
+                  },
+                }}
+              />
+            )}
           />
-          <TextField
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            fullWidth
+
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                fullWidth
+                error={Boolean(errors.password)}
+                helperText={errors.password?.message}
+                slotProps={{
+                  input: {
+                    sx: {
+                      borderRadius: `${INPUT_BORDER_RADIUS_PX}px`,
+                      height: BUTTON_HEIGHT_PX,
+                      '&:-webkit-autofill': {
+                        WebkitBoxShadow: '0 0 0 1000px #ffffff inset !important',
+                        WebkitTextFillColor: 'inherit !important',
+                      },
+                    },
+                  },
+                }}
+              />
+            )}
           />
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={rememberMe}
+                onChange={handleRememberMeChange}
+                color="primary"
+                size="small"
+              />
+            }
+            label="Remember me"
+            sx={{ ml: -0.5, mt: -0.5, mb: 0.5 }}
+          />
+
           <Button
             type="submit"
             fullWidth
             variant="contained"
             disabled={isSubmitting}
-            sx={{ mt: 1 }}
+            sx={{
+              height: BUTTON_HEIGHT_PX,
+              borderRadius: `${INPUT_BORDER_RADIUS_PX}px`,
+              fontWeight: 700,
+              fontSize: '1rem',
+              textTransform: 'none',
+            }}
           >
-            Sign In
+            {isSubmitting ? 'Logging in...' : 'Login'}
           </Button>
-          <Typography variant="caption" color="text.secondary">
-            Demo (password123): superadmin@posting.local ·
-            cmsadmin@posting.local · marketingadmin@posting.local
-          </Typography>
         </Stack>
       </AuthCard>
     </ContentLayout>
   )
 }
+
+
+

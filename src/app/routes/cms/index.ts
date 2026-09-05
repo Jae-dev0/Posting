@@ -5,3 +5,4 @@ export {
   CmsNavigationPage,
   CmsSettingsPage,
 } from './pages'
+export { CmsUsersPage } from './users'

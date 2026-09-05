@@ -28,6 +28,7 @@ const emptyFormValues: RoleFormValues = {
 const SYSTEM_ROLES = new Set([
   'super_admin',
   'company_admin',
+  'cms_sub_admin',
   'marketing_admin',
 ])
 

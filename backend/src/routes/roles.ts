@@ -22,6 +22,7 @@ rolesRouter.use(requireAuth)
 const SYSTEM_ROLE_NAMES = new Set<string>([
   ROLE_NAMES.SUPER_ADMIN,
   ROLE_NAMES.COMPANY_ADMIN,
+  ROLE_NAMES.CMS_SUB_ADMIN,
   ROLE_NAMES.MARKETING_ADMIN,
 ])
 

@@ -15,12 +15,14 @@ export function hasCmsRole(user: AuthUser | null | undefined) {
   return canAccessCms(user)
 }
 
-/** Marketing Admin — or marketing.access permission. */
+/** Marketing Admin / Sub Admin — or marketing.access permission. */
 export function hasMarketingRole(user: AuthUser | null | undefined) {
   return canAccessMarketing(user)
 }
 
-export function getHomeDepartment(user: AuthUser | null | undefined): AppDepartment {
+export function getHomeDepartment(
+  user: AuthUser | null | undefined,
+): AppDepartment {
   if (hasPlatformRole(user)) return 'platform'
   if (hasCmsRole(user) && !hasMarketingRole(user)) return 'cms'
   if (hasMarketingRole(user)) return 'marketing'
@@ -48,7 +50,14 @@ export function getDepartmentHomePath(department: AppDepartment) {
 export function getRoleLabel(user: AuthUser | null | undefined) {
   if (!user) return 'Guest'
   if (user.isSuperAdmin) return 'Super Admin'
-  if (hasCmsRole(user) && !hasMarketingRole(user)) return 'CMS Admin'
-  if (hasMarketingRole(user)) return 'Marketing Admin'
+
+  const roleNames = user.roleAssignments?.map((a) => a.roleName) ?? []
+  if (roleNames.includes('company_admin')) return 'CMS Admin'
+  if (roleNames.includes('cms_sub_admin')) return 'CMS Sub Admin'
+  if (roleNames.includes('marketing_admin') || user.role === 'main_admin') {
+    return 'Marketing Admin'
+  }
+  if (hasMarketingRole(user)) return 'Marketing Sub Admin'
+  if (hasCmsRole(user)) return 'CMS Sub Admin'
   return 'User'
 }

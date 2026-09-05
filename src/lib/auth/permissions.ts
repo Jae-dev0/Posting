@@ -102,15 +102,15 @@ export function canAccessCms(
 ): boolean {
   if (can(subject, PERMISSIONS.CMS_VIEW)) return true
   return Boolean(
-    subject?.roleAssignments?.some(
-      (a) => a.roleName === 'company_admin' || a.roleName === 'cms_admin',
+    subject?.roleAssignments?.some((a) =>
+      ['company_admin', 'cms_admin', 'cms_sub_admin'].includes(a.roleName),
     ),
   )
 }
 
 /**
- * Marketing area — prefers `marketing.access`, falls back to Marketing Admin
- * user.role. CMS-only admins are excluded from the legacy fallback.
+ * Marketing area — prefers `marketing.access`, falls back to Marketing roles.
+ * CMS Admin / CMS Sub Admin are excluded from the legacy fallback.
  */
 export function canAccessMarketing(
   subject: PermissionSubject | null | undefined,
@@ -123,10 +123,9 @@ export function canAccessMarketing(
   ) {
     return true
   }
-  const isCmsOnly =
-    subject.roleAssignments?.some(
-      (a) => a.roleName === 'company_admin' || a.roleName === 'cms_admin',
-    ) && !subject.roleAssignments?.some((a) => a.roleName === 'marketing_admin')
+  const isCmsOnly = subject.roleAssignments?.some((a) =>
+    ['company_admin', 'cms_admin', 'cms_sub_admin'].includes(a.roleName),
+  )
   if (isCmsOnly) return false
   return subject.role === 'main_admin' || subject.role === 'admin'
 }

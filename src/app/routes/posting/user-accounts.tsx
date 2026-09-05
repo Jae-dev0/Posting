@@ -80,8 +80,8 @@ export function UserAccountsPage() {
                 Account Management
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Create and manage admin accounts. Only main admins can access
-                this page.
+                Create Marketing Sub Admins for this company. Only Marketing
+                Admins can access this page.
               </Typography>
             </Stack>
             <Button
@@ -89,7 +89,7 @@ export function UserAccountsPage() {
               startIcon={<LuPlus size={16} />}
               onClick={handleOpenCreate}
             >
-              Create Account
+              Create Sub Admin
             </Button>
           </Stack>
 
