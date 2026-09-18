@@ -1,4 +1,12 @@
-import { Button, Card, CardContent, Stack, Typography } from '@mui/material'
+import {
+  Button,
+  Card,
+  CardContent,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { useState } from 'react'
 import { LuPlus } from 'react-icons/lu'
 
@@ -20,10 +28,20 @@ export function UserAccountsPage() {
   const { showSuccess, showError } = useSnackbar()
   const confirm = useConfirm()
   const { data, status } = useListUsers()
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
+  const filteredUsers = (data ?? []).filter((account) => {
+    const query = search.trim().toLowerCase()
+    return (
+      (!roleFilter || account.role === roleFilter) &&
+      (!query ||
+        `${account.fullname} ${account.email}`.toLowerCase().includes(query))
+    )
+  })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null)
 
-  const { mutate: deleteUser } = useDeleteUser({
+  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser({
     onSuccess: () => {
       showSuccess('Account deleted.')
     },
@@ -80,8 +98,9 @@ export function UserAccountsPage() {
                 Account Management
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Create Marketing Sub Admins for this company. Only Marketing
-                Admins can access this page.
+                Manage Marketing accounts for this company. Marketing Admins
+                manage Sub Admins; Super Admins can also manage Marketing
+                Admins.
               </Typography>
             </Stack>
             <Button
@@ -89,12 +108,41 @@ export function UserAccountsPage() {
               startIcon={<LuPlus size={16} />}
               onClick={handleOpenCreate}
             >
-              Create Sub Admin
+              {currentUser?.isSuperAdmin
+                ? 'Create Account'
+                : 'Create Sub Admin'}
             </Button>
           </Stack>
 
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            sx={{ mb: 2 }}
+          >
+            <TextField
+              label="Search name or email"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              size="small"
+              fullWidth
+            />
+            <TextField
+              select
+              label="Role"
+              value={roleFilter}
+              onChange={(event) => setRoleFilter(event.target.value)}
+              size="small"
+              sx={{ minWidth: 220 }}
+            >
+              <MenuItem value="">All roles</MenuItem>
+              <MenuItem value="main_admin">Marketing Admin</MenuItem>
+              <MenuItem value="admin">Marketing Sub Admin</MenuItem>
+            </TextField>
+          </Stack>
           <UsersTable
-            data={data ?? []}
+            data={filteredUsers}
+            isSuperAdmin={currentUser?.isSuperAdmin}
+            isDeleting={isDeleting}
             status={status}
             currentUserId={currentUser?.id}
             onEdit={handleOpenEdit}

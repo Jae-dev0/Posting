@@ -10,6 +10,7 @@ import { analyticsRouter } from './routes/analytics.js'
 import { auditRouter } from './routes/audit.js'
 import { authRouter } from './routes/auth.js'
 import { cmsRouter } from './routes/cms.js'
+import { publicVisualRouter, visualEditorRouter } from './routes/visual-editor.js'
 import { cmsUsersRouter } from './routes/cms-users.js'
 import { companiesRouter } from './routes/companies.js'
 import { healthRouter } from './routes/health.js'
@@ -47,6 +48,8 @@ export function createApp() {
   app.use('/api/audit', auditRouter)
   app.use('/api/roles', rolesRouter)
   app.use('/api/cms', cmsRouter)
+  app.use('/api/visual-editor', visualEditorRouter)
+  app.use('/api/public/genesis', publicVisualRouter)
   app.use('/api/cms/users', cmsUsersRouter)
 
   app.use((req, res) => {

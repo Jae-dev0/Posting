@@ -19,12 +19,29 @@ const ROLE_NAMES = {
 const DEMO_PASSWORD = 'password123'
 
 const DEMO_USERS = {
-  SUPER_ADMIN: 'superadmin@posting.local',
-  CMS_ADMIN: 'cmsadmin@posting.local',
-  MARKETING_ADMIN: 'marketingadmin@posting.local',
+  SUPER_ADMIN: 'admin@admin.com',
+  CMS_ADMIN: 'admin@cms.com',
+  MARKETING_ADMIN: 'admin@marketing.com',
 } as const
 
 const ALL_PERMISSIONS = [
+  { name: 'website.view', description: 'View company websites' },
+  { name: 'website.create', description: 'Create company websites' },
+  { name: 'website.edit', description: 'Edit company websites' },
+  { name: 'website.delete', description: 'Delete company websites' },
+  { name: 'page.view', description: 'View website pages' },
+  { name: 'page.create', description: 'Create website pages' },
+  { name: 'page.edit', description: 'Edit website pages' },
+  { name: 'page.delete', description: 'Delete website pages' },
+  { name: 'page.publish', description: 'Publish website pages' },
+  { name: 'navigation.view', description: 'View website navigation' },
+  { name: 'navigation.create', description: 'Create website navigation' },
+  { name: 'navigation.edit', description: 'Edit website navigation' },
+  { name: 'navigation.delete', description: 'Delete website navigation' },
+  { name: 'media.view', description: 'View website media' },
+  { name: 'media.upload', description: 'Upload website media' },
+  { name: 'media.delete', description: 'Delete website media' },
+  { name: 'analytics.view', description: 'View CMS analytics' },
   { name: 'cms.view', description: 'View CMS content' },
   { name: 'cms.create', description: 'Create CMS content' },
   { name: 'cms.edit', description: 'Edit CMS content' },
@@ -50,6 +67,23 @@ const ALL_PERMISSIONS = [
 ] as const
 
 const CMS_ADMIN_PERMISSIONS = [
+  'website.view',
+  'website.create',
+  'website.edit',
+  'website.delete',
+  'page.view',
+  'page.create',
+  'page.edit',
+  'page.delete',
+  'page.publish',
+  'navigation.view',
+  'navigation.create',
+  'navigation.edit',
+  'navigation.delete',
+  'media.view',
+  'media.upload',
+  'media.delete',
+  'analytics.view',
   'cms.view',
   'cms.create',
   'cms.edit',
@@ -65,6 +99,15 @@ const CMS_ADMIN_PERMISSIONS = [
 ] as const
 
 const CMS_SUB_ADMIN_PERMISSIONS = [
+  'website.view',
+  'page.view',
+  'page.create',
+  'page.edit',
+  'navigation.view',
+  'navigation.create',
+  'navigation.edit',
+  'media.view',
+  'media.upload',
   'cms.view',
   'cms.create',
   'cms.edit',
@@ -80,6 +123,18 @@ async function ensureRolePermissions(
   permissionNames: readonly string[],
   byName: Map<string, { id: number }>,
 ) {
+  const permissionIds = permissionNames.flatMap((name) => {
+    const permission = byName.get(name)
+    return permission ? [permission.id] : []
+  })
+
+  await prisma.rolePermission.deleteMany({
+    where: {
+      roleId,
+      permissionId: { notIn: permissionIds },
+    },
+  })
+
   for (const name of permissionNames) {
     const permission = byName.get(name)
     if (!permission) continue
@@ -163,21 +218,11 @@ async function ensureRbacCatalog() {
     },
   })
 
-  for (const permission of allPermissions) {
-    await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: superAdmin.id,
-          permissionId: permission.id,
-        },
-      },
-      create: {
-        roleId: superAdmin.id,
-        permissionId: permission.id,
-      },
-      update: {},
-    })
-  }
+  await ensureRolePermissions(
+    superAdmin.id,
+    allPermissions.map((permission) => permission.name),
+    byName,
+  )
 
   await ensureRolePermissions(cmsAdmin.id, CMS_ADMIN_PERMISSIONS, byName)
   await ensureRolePermissions(cmsSubAdmin.id, CMS_SUB_ADMIN_PERMISSIONS, byName)

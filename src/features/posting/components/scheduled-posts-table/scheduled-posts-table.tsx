@@ -31,6 +31,7 @@ export type ScheduledPostsTableProps = {
   status: Status
   onCancel?: (postId: number) => void
   onReschedule?: (postId: number, scheduledAt: string) => void
+  onEdit?: (postId: number) => void
   isUpdating?: boolean
 }
 
@@ -39,6 +40,7 @@ export function ScheduledPostsTable({
   status,
   onCancel,
   onReschedule,
+  onEdit,
   isUpdating = false,
 }: ScheduledPostsTableProps) {
   const [reschedulePostId, setReschedulePostId] = useState<number | null>(null)
@@ -136,6 +138,13 @@ export function ScheduledPostsTable({
                       spacing={1}
                       justifyContent="flex-end"
                     >
+                      <Button
+                        size="small"
+                        disabled={isUpdating || postStatus !== 'scheduled'}
+                        onClick={() => onEdit?.(id)}
+                      >
+                        Edit
+                      </Button>
                       <Button
                         size="small"
                         disabled={isUpdating || postStatus !== 'scheduled'}

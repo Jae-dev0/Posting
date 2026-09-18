@@ -20,9 +20,9 @@ Seeded admins (after seed):
 
 | Role | Email | Password | Area |
 |------|-------|----------|------|
-| Super Admin | `superadmin@posting.local` | `password123` | Overall / Platform |
-| CMS Admin | `cmsadmin@posting.local` | `password123` | Website CMS |
-| Marketing Admin | `marketingadmin@posting.local` | `password123` | Marketing |
+| Super Admin | `admin@admin.com` | `password123` | Overall / Platform |
+| CMS Admin | `admin@cms.com` | `password123` | Website CMS |
+| Marketing Admin | `admin@marketing.com` | `password123` | Marketing |
 
 Marketing Admin can manage connected accounts and Marketing users.
 

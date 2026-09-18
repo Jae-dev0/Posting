@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const createPageSchema = z.object({
-  websiteId: z.number().int().positive().optional(),
+  websiteId: z.number().int().positive(),
   title: z.string().trim().min(1).max(200),
   slug: z
     .string()
@@ -27,13 +27,13 @@ export const updatePageSchema = z.object({
 })
 
 export const upsertSettingSchema = z.object({
-  websiteId: z.number().int().positive().optional(),
-  key: z.string().trim().min(1).max(100),
+  websiteId: z.number().int().positive(),
+  key: z.string().trim().min(1).max(100).refine((key) => !key.startsWith('visual-editor:'), 'Reserved setting; use the visual editor'),
   value: z.string(),
 })
 
 export const createNavigationSchema = z.object({
-  websiteId: z.number().int().positive().optional(),
+  websiteId: z.number().int().positive(),
   label: z.string().trim().min(1).max(100),
   href: z.string().trim().min(1).max(500),
   sortOrder: z.number().int().default(0),
@@ -41,3 +41,30 @@ export const createNavigationSchema = z.object({
 })
 
 export const updateNavigationSchema = createNavigationSchema.partial()
+
+export const updateSectionSchema = z.object({
+  key: z.string().trim().min(1),
+  title: z.string().optional(),
+  content: z.string(),
+  sortOrder: z.number().int().optional(),
+})
+
+export const reorderSectionsSchema = z.object({
+  websiteId: z.number().int().positive(),
+  pageId: z.number().int().positive().optional(),
+  sections: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      sortOrder: z.number().int(),
+    }),
+  ),
+})
+
+export const externalSyncSchema = z.object({
+  targetUrl: z.string().url().default('https://demo2.bookna.com/api/v1/content-sync'),
+  apiKey: z.string().optional(),
+  websiteId: z.number().int().positive().optional(),
+  pageId: z.number().int().positive().optional(),
+  payload: z.record(z.any()).optional(),
+})
+

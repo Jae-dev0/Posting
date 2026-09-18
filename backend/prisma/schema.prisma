@@ -54,6 +54,11 @@ enum RoleScope {
   company
 }
 
+enum WebsiteAccessMode {
+  all_websites
+  selected_websites
+}
+
 enum PageStatus {
   draft
   published
@@ -80,6 +85,7 @@ model Company {
   websiteSettings    WebsiteSetting[]
   navigationItems    NavigationItem[]
   roleAssignments    UserRoleAssignment[]
+  roles              Role[]
 
   @@map("companies")
 }
@@ -101,6 +107,8 @@ model User {
   auditLogs          AuditLog[]
   accountPermissions AccountPermission[]
   roleAssignments    UserRoleAssignment[]
+  websiteAccessMode  WebsiteAccessMode    @default(all_websites)
+  websiteAccesses    UserWebsiteAccess[]
   pagesCreated       Page[]               @relation("PageCreatedBy")
   pagesUpdated       Page[]               @relation("PageUpdatedBy")
   mediaUploaded      CmsMedia[]           @relation("MediaUploadedBy")
@@ -123,9 +131,13 @@ model Role {
   name        String               @unique
   description String?
   scope       RoleScope
+  companyId   Int?
+  company     Company?             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isSystem    Boolean              @default(false)
   permissions RolePermission[]
   assignments UserRoleAssignment[]
 
+  @@index([companyId])
   @@map("roles")
 }
 
@@ -170,9 +182,23 @@ model Website {
   settings    WebsiteSetting[]
   navigation  NavigationItem[]
   media       CmsMedia[]
+  userAccesses UserWebsiteAccess[]
 
   @@index([companyId])
   @@map("websites")
+}
+
+/// Explicit website access for a company user whose access mode is selected_websites.
+model UserWebsiteAccess {
+  userId    Int
+  websiteId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  website   Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, websiteId])
+  @@index([websiteId])
+  @@map("user_website_access")
 }
 
 model Page {
@@ -336,10 +362,27 @@ model Post {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   accounts       PostAccount[]
+  media          PostMedia[]
 
   @@index([companyId])
   @@index([externalPostId])
   @@map("posts")
+}
+
+/// Ordered media attached to a marketing post. A post is either an image gallery
+/// (up to ten records) or a single video record.
+model PostMedia {
+  id        Int       @id @default(autoincrement())
+  postId    Int
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url       String
+  type      MediaType
+  position  Int
+  createdAt DateTime  @default(now())
+
+  @@unique([postId, position])
+  @@index([postId])
+  @@map("post_media")
 }
 
 model PostAccount {

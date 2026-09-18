@@ -47,6 +47,9 @@ export async function ensureRbacCatalog() {
   const allPermissions = await prisma.permission.findMany()
   const byName = new Map(allPermissions.map((p) => [p.name, p]))
 
+  const existingRoles = await prisma.role.findMany({ select: { name: true } })
+  const existingRoleNames = new Set(existingRoles.map((role) => role.name))
+
   const superAdmin = await prisma.role.upsert({
     where: { name: ROLE_NAMES.SUPER_ADMIN },
     create: {
@@ -115,9 +118,20 @@ export async function ensureRbacCatalog() {
     })
   }
 
-  await grantPermissions(companyAdmin.id, COMPANY_ADMIN_PERMISSIONS, byName)
-  await grantPermissions(cmsSubAdmin.id, CMS_SUB_ADMIN_PERMISSIONS, byName)
-  await grantPermissions(marketingAdmin.id, MARKETING_ADMIN_PERMISSIONS, byName)
+  // Defaults initialize new roles only; restarting must not restore revoked grants.
+  if (!existingRoleNames.has(ROLE_NAMES.COMPANY_ADMIN)) {
+    await grantPermissions(companyAdmin.id, COMPANY_ADMIN_PERMISSIONS, byName)
+  }
+  if (!existingRoleNames.has(ROLE_NAMES.CMS_SUB_ADMIN)) {
+    await grantPermissions(cmsSubAdmin.id, CMS_SUB_ADMIN_PERMISSIONS, byName)
+  }
+  if (!existingRoleNames.has(ROLE_NAMES.MARKETING_ADMIN)) {
+    await grantPermissions(
+      marketingAdmin.id,
+      MARKETING_ADMIN_PERMISSIONS,
+      byName,
+    )
+  }
 
   return { superAdmin, companyAdmin, cmsSubAdmin, marketingAdmin }
 }

@@ -2,6 +2,10 @@ import { z } from 'zod'
 
 export const socialPlatformSchema = z.enum(['facebook', 'instagram', 'tiktok'])
 export const mediaTypeSchema = z.enum(['image', 'video'])
+export const postMediaSchema = z.object({
+  url: z.string().url(),
+  type: mediaTypeSchema,
+})
 export const publishModeSchema = z.enum(['now', 'schedule', 'draft'])
 
 export const createAccountSchema = z.object({
@@ -24,8 +28,7 @@ export const updateAccountSchema = z
 export const createPostSchema = z
   .object({
     caption: z.string().max(2200),
-    mediaUrl: z.string().url().nullable().optional(),
-    mediaType: mediaTypeSchema.nullable().optional(),
+    media: z.array(postMediaSchema).max(10).optional().default([]),
     selectedAccountIds: z.array(z.number().int().positive()).default([]),
     publishMode: publishModeSchema,
     scheduledAt: z.string().datetime().nullable().optional(),
@@ -33,6 +36,13 @@ export const createPostSchema = z
     requireApproval: z.boolean().optional().default(false),
   })
   .superRefine((value, ctx) => {
+    const hasVideo = value.media.some((item) => item.type === 'video')
+    if (hasVideo && value.media.length !== 1) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['media'], message: 'A post can contain one video or up to ten images' })
+    }
+    if (!hasVideo && value.media.some((item) => item.type !== 'image')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['media'], message: 'Image galleries can contain images only' })
+    }
     if (value.publishMode === 'schedule' && !value.scheduledAt) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -62,8 +72,7 @@ export const createPostSchema = z
 export const updatePostSchema = z
   .object({
     caption: z.string().max(2200).optional(),
-    mediaUrl: z.string().url().nullable().optional(),
-    mediaType: mediaTypeSchema.nullable().optional(),
+    media: z.array(postMediaSchema).max(10).optional(),
     selectedAccountIds: z.array(z.number().int().positive()).optional(),
     scheduledAt: z.string().datetime().nullable().optional(),
     action: z
@@ -78,4 +87,11 @@ export const updatePostSchema = z
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one field is required',
+  })
+  .superRefine((value, ctx) => {
+    if (!value.media) return
+    const hasVideo = value.media.some((item) => item.type === 'video')
+    if (hasVideo && value.media.length !== 1) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['media'], message: 'A post can contain one video or up to ten images' })
+    }
   })

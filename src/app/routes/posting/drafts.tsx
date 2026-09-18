@@ -74,7 +74,7 @@ export function DraftsPage() {
                 Drafts
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Resume editing or delete saved drafts.
+                Edit the media, caption, or accounts for saved drafts.
               </Typography>
             </Box>
             <Button
@@ -133,9 +133,9 @@ export function DraftsPage() {
                           <Button
                             size="small"
                             component={RouterLink}
-                            to={`${paths.posting.create.getHref()}?draftId=${draft.id}`}
+                            to={`${paths.posting.create.getHref()}?postId=${draft.id}`}
                           >
-                            Resume
+                            Edit
                           </Button>
                           <Button
                             size="small"

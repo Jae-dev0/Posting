@@ -2,7 +2,6 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
-  type UseMutationOptions,
   type UseQueryOptions,
 } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -89,13 +88,23 @@ export const cmsSettingSchema = z.object({
 
 export type CmsSetting = z.infer<typeof cmsSettingSchema>
 
+// ─── Plain callback helper ────────────────────────────────────────────────────
+// TanStack Query v5 removed onSuccess/onError from UseMutationOptions.
+// We accept a plain callback bag so callers can still react to results.
+type MutationCallbacks<TData = unknown, TError = Error, TVariables = void> = {
+  onSuccess?: (data: TData, variables: TVariables) => void
+  onError?: (error: TError, variables: TVariables) => void
+}
+
+// ─── Queries ─────────────────────────────────────────────────────────────────
+
 export const useCmsDashboard = (options?: {
   query?: Omit<UseQueryOptions<CmsDashboard>, 'queryKey' | 'queryFn'>
 }) => {
   return useQuery({
     ...options?.query,
     queryKey: cmsKeys.dashboard(),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => {
       const res = await api.get('/api/cms/dashboard', { signal })
       return cmsDashboardSchema.parse(res.data)
     },
@@ -108,74 +117,9 @@ export const useListCmsPages = (options?: {
   return useQuery({
     ...options?.query,
     queryKey: cmsKeys.pageList(),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => {
       const res = await api.get('/api/cms/pages', { signal })
       return z.array(cmsPageSchema).parse(res.data)
-    },
-  })
-}
-
-export type CreateCmsPageInput = {
-  title: string
-  slug: string
-  content?: string
-  status?: 'draft' | 'published' | 'archived'
-}
-
-export const useCreateCmsPage = (
-  options?: Omit<UseMutationOptions<CmsPage, Error, CreateCmsPageInput>, 'mutationFn'>,
-) => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (data: CreateCmsPageInput) => {
-      const res = await api.post('/api/cms/pages', data)
-      return cmsPageSchema.parse(res.data)
-    },
-    ...options,
-    onSuccess: (data, variables, context) => {
-      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
-      void queryClient.invalidateQueries({ queryKey: cmsKeys.dashboard() })
-      options?.onSuccess?.(data, variables, context)
-    },
-  })
-}
-
-export const useUpdateCmsPage = (
-  options?: Omit<
-    UseMutationOptions<
-      CmsPage,
-      Error,
-      { id: number; data: Partial<CreateCmsPageInput> }
-    >,
-    'mutationFn'
-  >,
-) => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, data }) => {
-      const res = await api.patch(`/api/cms/pages/${id}`, data)
-      return cmsPageSchema.parse(res.data)
-    },
-    ...options,
-    onSuccess: (data, variables, context) => {
-      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
-      options?.onSuccess?.(data, variables, context)
-    },
-  })
-}
-
-export const useDeleteCmsPage = (
-  options?: Omit<UseMutationOptions<void, Error, number>, 'mutationFn'>,
-) => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/api/cms/pages/${id}`)
-    },
-    ...options,
-    onSuccess: (data, variables, context) => {
-      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
-      options?.onSuccess?.(data, variables, context)
     },
   })
 }
@@ -186,7 +130,7 @@ export const useListCmsMedia = (options?: {
   return useQuery({
     ...options?.query,
     queryKey: cmsKeys.media(),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => {
       const res = await api.get('/api/cms/media', { signal })
       return z.array(cmsMediaSchema).parse(res.data)
     },
@@ -199,7 +143,7 @@ export const useListCmsNavigation = (options?: {
   return useQuery({
     ...options?.query,
     queryKey: cmsKeys.navigation(),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => {
       const res = await api.get('/api/cms/navigation', { signal })
       return z.array(cmsNavSchema).parse(res.data)
     },
@@ -212,29 +156,179 @@ export const useListCmsSettings = (options?: {
   return useQuery({
     ...options?.query,
     queryKey: cmsKeys.settings(),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }: { signal?: AbortSignal }) => {
       const res = await api.get('/api/cms/settings', { signal })
       return z.array(cmsSettingSchema).parse(res.data)
     },
   })
 }
 
+// ─── Mutations ────────────────────────────────────────────────────────────────
+
+export type CreateCmsPageInput = {
+  title: string
+  slug: string
+  content?: string
+  status?: 'draft' | 'published' | 'archived'
+}
+
+export const useCreateCmsPage = (callbacks?: MutationCallbacks<CmsPage, Error, CreateCmsPageInput>) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: CreateCmsPageInput) => {
+      const res = await api.post('/api/cms/pages', data)
+      return cmsPageSchema.parse(res.data)
+    },
+    onSuccess: (data: CmsPage, variables: CreateCmsPageInput) => {
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.dashboard() })
+      callbacks?.onSuccess?.(data, variables)
+    },
+    onError: (error: Error, variables: CreateCmsPageInput) => {
+      callbacks?.onError?.(error, variables)
+    },
+  })
+}
+
+export const useUpdateCmsPage = (
+  callbacks?: MutationCallbacks<CmsPage, Error, { id: number; data: Partial<CreateCmsPageInput> }>,
+) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateCmsPageInput> }) => {
+      const res = await api.patch(`/api/cms/pages/${id}`, data)
+      return cmsPageSchema.parse(res.data)
+    },
+    onSuccess: (data: CmsPage, variables: { id: number; data: Partial<CreateCmsPageInput> }) => {
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
+      callbacks?.onSuccess?.(data, variables)
+    },
+    onError: (error: Error, variables: { id: number; data: Partial<CreateCmsPageInput> }) => {
+      callbacks?.onError?.(error, variables)
+    },
+  })
+}
+
+export const useDeleteCmsPage = (callbacks?: MutationCallbacks<void, Error, number>) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/api/cms/pages/${id}`)
+    },
+    onSuccess: (_data: void, variables: number) => {
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
+      callbacks?.onSuccess?.(undefined, variables)
+    },
+    onError: (error: Error, variables: number) => {
+      callbacks?.onError?.(error, variables)
+    },
+  })
+}
+
 export const useUpsertCmsSetting = (
-  options?: Omit<
-    UseMutationOptions<CmsSetting, Error, { key: string; value: string }>,
-    'mutationFn'
+  callbacks?: MutationCallbacks<CmsSetting, Error, { key: string; value: string }>,
+) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: { key: string; value: string }) => {
+      const res = await api.put('/api/cms/settings', data)
+      return cmsSettingSchema.parse(res.data)
+    },
+    onSuccess: (data: CmsSetting, variables: { key: string; value: string }) => {
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.settings() })
+      callbacks?.onSuccess?.(data, variables)
+    },
+    onError: (error: Error, variables: { key: string; value: string }) => {
+      callbacks?.onError?.(error, variables)
+    },
+  })
+}
+
+export const usePublishCmsPage = (
+  callbacks?: MutationCallbacks<CmsPage & { externalSync?: Record<string, unknown> }, Error, number>,
+) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await api.post(`/api/cms/pages/${id}/publish`)
+      return res.data as CmsPage & { externalSync?: Record<string, unknown> }
+    },
+    onSuccess: (
+      data: CmsPage & { externalSync?: Record<string, unknown> },
+      variables: number,
+    ) => {
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.dashboard() })
+      callbacks?.onSuccess?.(data, variables)
+    },
+    onError: (error: Error, variables: number) => {
+      callbacks?.onError?.(error, variables)
+    },
+  })
+}
+
+export const useReorderCmsSections = (
+  callbacks?: MutationCallbacks<
+    { success: boolean },
+    Error,
+    { websiteId: number; pageId?: number; sections: Array<{ id: number; sortOrder: number }> }
   >,
 ) => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data) => {
-      const res = await api.put('/api/cms/settings', data)
-      return cmsSettingSchema.parse(res.data)
+    mutationFn: async (data: {
+      websiteId: number
+      pageId?: number
+      sections: Array<{ id: number; sortOrder: number }>
+    }) => {
+      const res = await api.post('/api/cms/sections/reorder', data)
+      return res.data as { success: boolean }
     },
-    ...options,
-    onSuccess: (data, variables, context) => {
-      void queryClient.invalidateQueries({ queryKey: cmsKeys.settings() })
-      options?.onSuccess?.(data, variables, context)
+    onSuccess: (
+      data: { success: boolean },
+      variables: { websiteId: number; pageId?: number; sections: Array<{ id: number; sortOrder: number }> },
+    ) => {
+      void queryClient.invalidateQueries({ queryKey: cmsKeys.pages() })
+      callbacks?.onSuccess?.(data, variables)
+    },
+    onError: (
+      error: Error,
+      variables: { websiteId: number; pageId?: number; sections: Array<{ id: number; sortOrder: number }> },
+    ) => {
+      callbacks?.onError?.(error, variables)
+    },
+  })
+}
+
+export type BooknaSyncPayload = {
+  targetUrl?: string
+  apiKey?: string
+  websiteId?: number
+  pageId?: number
+  payload?: Record<string, unknown>
+}
+
+export type BooknaSyncResult = {
+  success: boolean
+  targetUrl: string
+  syncedAt: string
+  status: string
+  payloadSummary: Record<string, unknown>
+}
+
+export const useSyncCmsToBookna = (
+  callbacks?: MutationCallbacks<BooknaSyncResult, Error, BooknaSyncPayload>,
+) => {
+  return useMutation({
+    mutationFn: async (data: BooknaSyncPayload) => {
+      const res = await api.post('/api/cms/sync/external', data)
+      return res.data as BooknaSyncResult
+    },
+    onSuccess: (data: BooknaSyncResult, variables: BooknaSyncPayload) => {
+      callbacks?.onSuccess?.(data, variables)
+    },
+    onError: (error: Error, variables: BooknaSyncPayload) => {
+      callbacks?.onError?.(error, variables)
     },
   })
 }

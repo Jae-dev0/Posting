@@ -4,7 +4,9 @@ import {
   createInstagramImageContainer,
   publishInstagramContainer,
   publishPageFeedPost,
+  publishPageMultiPhotoPost,
   publishPagePhotoPost,
+  publishPageVideoPost,
   waitForInstagramContainer,
 } from './meta-graph.js'
 import { prisma } from './prisma.js'
@@ -17,6 +19,8 @@ type DuePost = {
   createdById: number | null
   caption: string
   mediaUrl: string | null
+  mediaType?: 'image' | 'video' | null
+  media: Array<{ url: string; type: 'image' | 'video'; position: number }>
   accounts: Array<{
     accountId: number
     account: {
@@ -40,10 +44,36 @@ async function publishToSocialAccount(input: {
   accessToken: string
   caption: string
   mediaUrl: string | null
+  mediaType?: 'image' | 'video' | null
+  media?: Array<{ url: string; type: 'image' | 'video' }>
 }) {
-  const { platform, pageId, accessToken, caption, mediaUrl } = input
+  const { platform, pageId, accessToken, caption, mediaUrl, mediaType, media = [] } = input
 
   if (platform === SocialPlatform.facebook) {
+    if (media.length > 1) {
+      const photos = await Promise.all(
+        media.map((item) =>
+          publishPagePhotoPost({
+            pageId,
+            pageAccessToken: accessToken,
+            message: '',
+            imageUrl: item.url,
+            published: false,
+          }),
+        ),
+      )
+      const gallery = await publishPageMultiPhotoPost({
+        pageId,
+        pageAccessToken: accessToken,
+        message: caption,
+        photoIds: photos.map((photo) => photo.id),
+      })
+      return gallery.id
+    }
+    if (mediaUrl && mediaType === 'video') {
+      const video = await publishPageVideoPost({ pageId, pageAccessToken: accessToken, message: caption, videoUrl: mediaUrl })
+      return video.id
+    }
     if (mediaUrl) {
       const photo = await publishPagePhotoPost({
         pageId,
@@ -63,6 +93,9 @@ async function publishToSocialAccount(input: {
   }
 
   if (platform === SocialPlatform.instagram) {
+    if (mediaType === 'video') {
+      throw new Error('Instagram scheduled video publishing is not configured for this account')
+    }
     if (!mediaUrl) {
       throw new Error('Instagram scheduled posts require an image URL')
     }
@@ -109,6 +142,8 @@ async function processDuePost(post: DuePost) {
         accessToken,
         caption: post.caption,
         mediaUrl: post.mediaUrl,
+        mediaType: post.mediaType,
+        media: post.media,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Publish failed'
@@ -166,6 +201,7 @@ export async function processDueScheduledPosts() {
       scheduledAt: { lte: now },
     },
     include: {
+      media: { orderBy: { position: 'asc' } },
       accounts: {
         include: {
           account: {

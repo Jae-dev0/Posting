@@ -138,7 +138,12 @@ export function PermissionGroupEditor({
               {isActiveTab ? (
                 <Stack spacing={2.5}>
                   <Typography fontSize={13} color="text.secondary">
-                    Editing permissions for <strong>{role.name}</strong>
+                    {role.name === 'super_admin'
+                      ? 'All permissions are always granted to '
+                      : readOnly
+                        ? 'Viewing permissions for '
+                        : 'Editing permissions for '}
+                    <strong>{role.name}</strong>
                     {role.description ? ` — ${role.description}` : null}
                   </Typography>
                   {categorized.map(
@@ -199,7 +204,9 @@ export function PermissionGroupEditor({
                                   }
                                   color={granted ? 'success' : 'error'}
                                   size="small"
-                                  disabled={readOnly}
+                                  disabled={
+                                    readOnly || role.name === 'super_admin'
+                                  }
                                 >
                                   {granted ? (
                                     <MdCheckCircle size={22} />

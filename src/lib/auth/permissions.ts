@@ -2,6 +2,23 @@
  * Canonical permission names — keep in sync with backend/src/lib/permissions.ts
  */
 export const PERMISSIONS = {
+  WEBSITE_VIEW: 'website.view',
+  WEBSITE_CREATE: 'website.create',
+  WEBSITE_EDIT: 'website.edit',
+  WEBSITE_DELETE: 'website.delete',
+  PAGE_VIEW: 'page.view',
+  PAGE_CREATE: 'page.create',
+  PAGE_EDIT: 'page.edit',
+  PAGE_DELETE: 'page.delete',
+  PAGE_PUBLISH: 'page.publish',
+  NAVIGATION_VIEW: 'navigation.view',
+  NAVIGATION_CREATE: 'navigation.create',
+  NAVIGATION_EDIT: 'navigation.edit',
+  NAVIGATION_DELETE: 'navigation.delete',
+  MEDIA_VIEW: 'media.view',
+  MEDIA_UPLOAD: 'media.upload',
+  MEDIA_DELETE: 'media.delete',
+  ANALYTICS_VIEW: 'analytics.view',
   CMS_VIEW: 'cms.view',
   CMS_CREATE: 'cms.create',
   CMS_EDIT: 'cms.edit',
@@ -118,9 +135,7 @@ export function canAccessMarketing(
   if (!subject) return false
   if (can(subject, PERMISSIONS.MARKETING_ACCESS)) return true
   if (subject.isSuperAdmin) return true
-  if (
-    subject.roleAssignments?.some((a) => a.roleName === 'marketing_admin')
-  ) {
+  if (subject.roleAssignments?.some((a) => a.roleName === 'marketing_admin')) {
     return true
   }
   const isCmsOnly = subject.roleAssignments?.some((a) =>

@@ -24,12 +24,14 @@ services:
       - '${API_PORT:-3001}:3001'
     environment:
       PORT: 3001
+      GENESIS_WEBSITE_ID: ${GENESIS_WEBSITE_ID:-1}
+      GENESIS_SITE_URL: ${GENESIS_SITE_URL:-https://demo2.bookna.com}
       NODE_ENV: production
       DATABASE_URL: postgresql://posting:posting@db:5432/posting
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://demo3.bookna.com,http://demo3.bookna.com:2111}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-https://demo3.bookna.com}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-}
       META_APP_ID: ${META_APP_ID:-}
       META_APP_SECRET: ${META_APP_SECRET:-}
@@ -59,7 +61,7 @@ services:
         VITE_APP_AUTH_BYPASS: ${VITE_APP_AUTH_BYPASS:-false}
     restart: unless-stopped
     ports:
-      - '${DOCKER_APP_PORT:-3000}:80'
+      - '2111:80'
     depends_on:
       - api
 

@@ -326,4 +326,57 @@ document.addEventListener('DOMContentLoaded', function () {
     // If scripts run after interactive, dismiss immediately.
     onReady();
   }
+
+  // Realtime CMS Visual Editor PostMessage Listener for demo2.bookna.com
+  window.addEventListener('message', function (event) {
+    if (!event.data || event.data.type !== 'CMS_REALTIME_UPDATE') return;
+
+    var activeTab = event.data.activeTab;
+    var sectionData = event.data.sectionData;
+    if (!sectionData) return;
+
+    if (activeTab === 'hero' || activeTab === 'booking') {
+      var hashtag = document.querySelector('.bookna-hero__hashtag');
+      if (hashtag && sectionData.badgeText) {
+        hashtag.innerHTML = sectionData.badgeText;
+      }
+
+      var headline = document.querySelector('.bookna-hero__campaign h1') || document.querySelector('.bookna-hero__hashtag');
+      if (headline && sectionData.headline && activeTab === 'hero') {
+        headline.innerHTML = sectionData.headline;
+      }
+
+      var tagline = document.querySelector('.bookna-hero__tagline');
+      if (tagline && sectionData.subtitle) {
+        tagline.textContent = sectionData.subtitle;
+      }
+
+      var bookingTitle = document.querySelector('.bookna-booking__title');
+      if (bookingTitle && sectionData.headline && activeTab === 'booking') {
+        bookingTitle.textContent = sectionData.headline;
+      }
+
+      var searchBtn = document.getElementById('search_btn');
+      if (searchBtn && sectionData.shopNowButton) {
+        searchBtn.innerHTML = '<i class="fas fa-search"></i> ' + sectionData.shopNowButton;
+      }
+    } else if (activeTab === 'trust') {
+      var trustTitle = document.querySelector('.bookna-trust__title');
+      if (trustTitle && sectionData.headline) {
+        trustTitle.textContent = sectionData.headline;
+      }
+    } else if (activeTab === 'about' || activeTab === 'services' || activeTab === 'joybus') {
+      var targetSection = document.getElementById(activeTab);
+      if (targetSection) {
+        var heading = targetSection.querySelector('.bookna-heading') || targetSection.querySelector('h2');
+        if (heading && sectionData.headline) {
+          heading.textContent = sectionData.headline;
+        }
+        var lead = targetSection.querySelector('.bookna-lead') || targetSection.querySelector('p');
+        if (lead && sectionData.subtitle) {
+          lead.textContent = sectionData.subtitle;
+        }
+      }
+    }
+  });
 });

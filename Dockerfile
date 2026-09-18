@@ -3,6 +3,8 @@ FROM node:22-bookworm AS base
 FROM base AS deps
 WORKDIR /app
 
+RUN apt-get update && apt-get install --no-install-recommends --yes libvips-dev && rm -rf /var/lib/apt/lists/*
+
 COPY .npmrc .
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 RUN --mount=type=secret,id=npm-token \

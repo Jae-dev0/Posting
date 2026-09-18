@@ -63,9 +63,12 @@ const roleInclude = {
 rolesRouter.get(
   '/',
   requirePermission('role.view'),
-  async (_req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
       const roles = await prisma.role.findMany({
+        where: req.user?.isSuperAdmin
+          ? {}
+          : { OR: [{ companyId: null }, { companyId: req.user!.companyId }] },
         include: roleInclude,
         orderBy: { name: 'asc' },
       })
@@ -131,6 +134,7 @@ rolesRouter.get(
 
 rolesRouter.post(
   '/',
+  requireSuperAdmin,
   requirePermission('role.create'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -162,6 +166,7 @@ rolesRouter.post(
 
 rolesRouter.patch(
   '/:id',
+  requireSuperAdmin,
   requirePermission('role.edit'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -178,6 +183,18 @@ rolesRouter.patch(
       }
 
       const body = updateRoleSchema.parse(req.body)
+
+      if (body.scope && body.scope !== existing.scope) {
+        const assignments = await prisma.userRoleAssignment.count({
+          where: { roleId: id },
+        })
+        if (assignments > 0) {
+          res
+            .status(400)
+            .json({ message: 'Cannot change the scope of an assigned role' })
+          return
+        }
+      }
 
       if (SYSTEM_ROLE_NAMES.has(existing.name)) {
         if (body.name && body.name !== existing.name) {
@@ -198,7 +215,9 @@ rolesRouter.patch(
         where: { id },
         data: {
           ...(body.name != null ? { name: body.name } : {}),
-          ...(body.description != null ? { description: body.description } : {}),
+          ...(body.description != null
+            ? { description: body.description }
+            : {}),
           ...(body.scope != null ? { scope: body.scope } : {}),
         },
         include: roleInclude,
@@ -226,6 +245,7 @@ rolesRouter.patch(
  */
 rolesRouter.put(
   '/permission-grants',
+  requireSuperAdmin,
   requirePermission('role.edit'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -247,6 +267,18 @@ rolesRouter.put(
         },
       })
       const roleById = new Map(roles.map((r) => [r.id, r]))
+      const permissions = await prisma.permission.count({
+        where: { id: { in: [...permissionIdSet] } },
+      })
+      if (
+        permissions !== permissionIdSet.size ||
+        body.grants.some((grant) => !roleById.has(grant.roleId))
+      ) {
+        res.status(400).json({
+          message: 'Unknown role or permission. Refresh and try again.',
+        })
+        return
+      }
 
       await prisma.$transaction(async (tx) => {
         for (const grant of body.grants) {

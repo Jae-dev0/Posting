@@ -2,6 +2,7 @@ import { UserRole } from '@prisma/client'
 import { Router } from 'express'
 import { z } from 'zod'
 
+import { marketingAccountsWhere } from '../lib/department-accounts.js'
 import { writeAuditLog } from '../lib/audit.js'
 import { prisma } from '../lib/prisma.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
@@ -18,135 +19,154 @@ const upsertPermissionSchema = z.object({
   canApprove: z.boolean().optional().default(false),
 })
 
-teamRouter.get('/overview', requireMainAdmin, async (req: AuthenticatedRequest, res, next) => {
-  try {
-    const companyId = req.user?.companyId
-    if (!companyId) {
-      res.status(403).json({ message: 'Company context required' })
-      return
-    }
+teamRouter.get(
+  '/overview',
+  requireMainAdmin,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const companyId = req.user?.companyId
+      if (!companyId) {
+        res.status(403).json({ message: 'Company context required' })
+        return
+      }
 
-    const [users, accounts, permissions, auditLogs, pendingPosts] =
-      await Promise.all([
-        prisma.user.findMany({
-          where: { companyId },
-          orderBy: [{ role: 'asc' }, { lastName: 'asc' }],
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-          },
-        }),
-        prisma.connectedAccount.findMany({
-          where: { companyId, isConnected: true },
-          orderBy: [{ platform: 'asc' }, { accountName: 'asc' }],
-        }),
-        prisma.accountPermission.findMany({
-          where: { companyId },
-          include: {
-            user: {
-              select: { id: true, firstName: true, lastName: true, email: true },
+      const [users, accounts, permissions, auditLogs, pendingPosts] =
+        await Promise.all([
+          prisma.user.findMany({
+            where: marketingAccountsWhere(companyId),
+            orderBy: [{ role: 'asc' }, { lastName: 'asc' }],
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
             },
-            connectedAccount: {
-              select: {
-                id: true,
-                platform: true,
-                accountName: true,
-                handle: true,
+          }),
+          prisma.connectedAccount.findMany({
+            where: { companyId, isConnected: true },
+            orderBy: [{ platform: 'asc' }, { accountName: 'asc' }],
+          }),
+          prisma.accountPermission.findMany({
+            where: { companyId, user: marketingAccountsWhere(companyId) },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+              connectedAccount: {
+                select: {
+                  id: true,
+                  platform: true,
+                  accountName: true,
+                  handle: true,
+                },
               },
             },
-          },
-        }),
-        prisma.auditLog.findMany({
-          where: { companyId },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-          include: {
-            user: {
-              select: { id: true, firstName: true, lastName: true, email: true },
+          }),
+          prisma.auditLog.findMany({
+            where: { companyId },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
             },
-          },
-        }),
-        prisma.post.findMany({
-          where: { companyId, status: 'pending_approval' },
-          orderBy: { updatedAt: 'desc' },
-          include: {
-            accounts: { include: { account: true } },
-            createdBy: {
-              select: { id: true, firstName: true, lastName: true, email: true },
+          }),
+          prisma.post.findMany({
+            where: { companyId, status: 'pending_approval' },
+            orderBy: { updatedAt: 'desc' },
+            include: {
+              accounts: { include: { account: true } },
+              createdBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
             },
-          },
-        }),
-      ])
+          }),
+        ])
 
-    res.json({
-      users: users.map((user) => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        name: `${user.firstName} ${user.lastName}`.trim(),
-        role: user.role,
-      })),
-      accounts: accounts.map((account) => ({
-        id: account.id,
-        platform: account.platform,
-        accountName: account.accountName,
-        handle: account.handle,
-        isConnected: account.isConnected,
-      })),
-      permissions: permissions.map((permission) => ({
-        id: permission.id,
-        userId: permission.userId,
-        connectedAccountId: permission.connectedAccountId,
-        canPublish: permission.canPublish,
-        canApprove: permission.canApprove,
-        user: {
-          id: permission.user.id,
-          name: `${permission.user.firstName} ${permission.user.lastName}`.trim(),
-          email: permission.user.email,
-        },
-        account: permission.connectedAccount,
-      })),
-      pendingApprovals: pendingPosts.map((post) => ({
-        id: post.id,
-        caption: post.caption,
-        mediaUrl: post.mediaUrl,
-        status: post.status,
-        createdAt: post.createdAt.toISOString(),
-        updatedAt: post.updatedAt.toISOString(),
-        platforms: post.accounts.map(({ account }) => account.platform),
-        createdBy: post.createdBy
-          ? {
-              id: post.createdBy.id,
-              name: `${post.createdBy.firstName} ${post.createdBy.lastName}`.trim(),
-              email: post.createdBy.email,
-            }
-          : null,
-      })),
-      auditLog: auditLogs.map((entry) => ({
-        id: entry.id,
-        action: entry.action,
-        entityType: entry.entityType,
-        entityId: entry.entityId,
-        summary: entry.summary,
-        createdAt: entry.createdAt.toISOString(),
-        user: entry.user
-          ? {
-              id: entry.user.id,
-              name: `${entry.user.firstName} ${entry.user.lastName}`.trim(),
-              email: entry.user.email,
-            }
-          : null,
-      })),
-      roles: Object.values(UserRole),
-    })
-  } catch (error) {
-    next(error)
-  }
-})
+      res.json({
+        users: users.map((user) => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          role: user.role,
+        })),
+        accounts: accounts.map((account) => ({
+          id: account.id,
+          platform: account.platform,
+          accountName: account.accountName,
+          handle: account.handle,
+          isConnected: account.isConnected,
+        })),
+        permissions: permissions.map((permission) => ({
+          id: permission.id,
+          userId: permission.userId,
+          connectedAccountId: permission.connectedAccountId,
+          canPublish: permission.canPublish,
+          canApprove: permission.canApprove,
+          user: {
+            id: permission.user.id,
+            name: `${permission.user.firstName} ${permission.user.lastName}`.trim(),
+            email: permission.user.email,
+          },
+          account: permission.connectedAccount,
+        })),
+        pendingApprovals: pendingPosts.map((post) => ({
+          id: post.id,
+          caption: post.caption,
+          mediaUrl: post.mediaUrl,
+          status: post.status,
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+          platforms: post.accounts.map(({ account }) => account.platform),
+          createdBy: post.createdBy
+            ? {
+                id: post.createdBy.id,
+                name: `${post.createdBy.firstName} ${post.createdBy.lastName}`.trim(),
+                email: post.createdBy.email,
+              }
+            : null,
+        })),
+        auditLog: auditLogs.map((entry) => ({
+          id: entry.id,
+          action: entry.action,
+          entityType: entry.entityType,
+          entityId: entry.entityId,
+          summary: entry.summary,
+          createdAt: entry.createdAt.toISOString(),
+          user: entry.user
+            ? {
+                id: entry.user.id,
+                name: `${entry.user.firstName} ${entry.user.lastName}`.trim(),
+                email: entry.user.email,
+              }
+            : null,
+        })),
+        roles: Object.values(UserRole),
+      })
+    } catch (error) {
+      next(error)
+    }
+  },
+)
 
 teamRouter.put(
   '/permissions',
@@ -164,7 +184,7 @@ teamRouter.put(
 
       const [user, account] = await Promise.all([
         prisma.user.findFirst({
-          where: { id: body.userId, companyId },
+          where: { id: body.userId, ...marketingAccountsWhere(companyId) },
         }),
         prisma.connectedAccount.findFirst({
           where: { id: body.connectedAccountId, companyId },
@@ -241,7 +261,7 @@ teamRouter.delete(
       }
 
       const existing = await prisma.accountPermission.findFirst({
-        where: { id, companyId },
+        where: { id, companyId, user: marketingAccountsWhere(companyId) },
       })
       if (!existing) {
         res.status(404).json({ message: 'Permission not found' })

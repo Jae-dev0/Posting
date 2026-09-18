@@ -6,23 +6,27 @@ import {
   ListPageToolbar,
   PagedTableCard,
 } from '@/components/layout'
+import { useListRoles, type PlatformRole } from '@/features/platform'
 import {
   RoleFilters,
   RoleFormDialogs,
   RoleTables,
   RoleViewDialogs,
 } from '@/features/platform/components/roles'
-import { useListRoles, type PlatformRole } from '@/features/platform'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { useEntityViewDialog } from '@/hooks/use-entity-view-dialog'
-import { PERMISSIONS, useCan } from '@/lib/auth'
+import { PERMISSIONS, useCan, useIsSuperAdmin } from '@/lib/auth'
 import { paginate } from '@/utils'
 
 export function PlatformRolesListPage() {
   const { data: roles = [], status } = useListRoles()
-  const canCreate = useCan(PERMISSIONS.ROLE_CREATE)
-  const canEdit = useCan(PERMISSIONS.ROLE_EDIT)
-  const { isOpen, entity, openWith, close } = useEntityViewDialog<PlatformRole>()
+  const hasCreatePermission = useCan(PERMISSIONS.ROLE_CREATE)
+  const canCreate = useIsSuperAdmin() && hasCreatePermission
+  const isSuperAdmin = useIsSuperAdmin()
+  const hasEditPermission = useCan(PERMISSIONS.ROLE_EDIT)
+  const canEdit = isSuperAdmin && hasEditPermission
+  const { isOpen, entity, openWith, close } =
+    useEntityViewDialog<PlatformRole>()
 
   const [search, setSearch] = useState('')
   const [scopeFilter, setScopeFilter] = useState<'platform' | 'company' | ''>(

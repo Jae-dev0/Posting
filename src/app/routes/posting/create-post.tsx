@@ -22,6 +22,7 @@ import {
   usePublishFacebookPost,
   usePublishInstagramPost,
   useUploadMedia,
+  useUpdatePost,
 } from '@/features/posting'
 import { useSnackbar } from '@/lib/mui/snackbar-hooks'
 
@@ -83,12 +84,12 @@ function getPublishFailureReason(error: unknown) {
 export function CreatePostPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const draftIdParam = searchParams.get('draftId')
-  const resumeDraftId = draftIdParam ? Number(draftIdParam) : null
+  const editIdParam = searchParams.get('postId') ?? searchParams.get('draftId')
+  const resumeDraftId = editIdParam ? Number(editIdParam) : null
 
   const { showSuccess, showError, showNotification } = useSnackbar()
   const [draft, setDraft] = useState<PostDraft>(defaultPostDraft)
-  const [mediaFiles, setMediaFiles] = useState<File[]>([])
+  const [mediaFiles, setMediaFiles] = useState<Record<string, File>>({})
   const [isPublishing, setIsPublishing] = useState(false)
   const [busyAction, setBusyAction] = useState<
     'publish' | 'schedule' | 'draft' | null
@@ -97,7 +98,7 @@ export function CreatePostPage() {
 
   const facebookPagesQuery = useFacebookPages()
   const instagramAccountsQuery = useInstagramAccounts()
-  const draftsQuery = usePosts('draft', {
+  const draftsQuery = usePosts('all', {
     query: { enabled: resumeDraftId !== null && Number.isInteger(resumeDraftId) },
   })
 
@@ -160,19 +161,20 @@ export function CreatePostPage() {
 
     setDraft({
       caption: existing.caption === '(untitled draft)' ? '' : existing.caption,
-      mediaUrls: existing.mediaUrl ? [existing.mediaUrl] : [],
-      mediaType: existing.mediaType ?? (existing.mediaUrl ? 'image' : null),
+      mediaUrls: existing.media.map((item) => item.url),
+      mediaType: existing.media[0]?.type ?? null,
       selectedAccountIds: selectedUiIds,
-      publishMode: 'now',
-      scheduledAt: null,
+      publishMode: existing.publishMode === 'schedule' ? 'schedule' : 'now',
+      scheduledAt: existing.scheduledAt ?? null,
     })
-    setMediaFiles([])
+    setMediaFiles({})
     setEditingDraftId(resumeDraftId)
   }, [draftsQuery.data, editingDraftId, publishTargets, resumeDraftId])
 
   const { mutateAsync: publishFacebook } = usePublishFacebookPost()
   const { mutateAsync: publishInstagram } = usePublishInstagramPost()
   const { mutateAsync: createCmsPost } = useCreatePost()
+  const { mutateAsync: updateCmsPost } = useUpdatePost()
   const { mutateAsync: uploadMedia } = useUploadMedia()
 
   const resolveConnectedAccountIds = (selectedAccountIds: number[]) => {
@@ -184,15 +186,16 @@ export function CreatePostPage() {
     return [...new Set(ids)]
   }
 
-  const uploadPrimaryMediaUrl = async (): Promise<string | null> => {
-    if (mediaFiles.length > 0) {
-      const uploaded = await uploadMedia(mediaFiles[0])
-      return uploaded.url
-    }
+  const uploadPostMedia = async () =>
+    Promise.all(
+      draft.mediaUrls.map(async (url) => {
+        const file = mediaFiles[url]
+        if (file) return uploadMedia(file)
+        return { url, type: draft.mediaType ?? 'image' }
+      }),
+    )
 
-    const publicUrl = draft.mediaUrls.find((url) => !url.startsWith('blob:'))
-    return publicUrl ?? null
-  }
+  const mediaFileList = Object.values(mediaFiles)
 
   const handleCaptionChange = (caption: string) => {
     setDraft((current) => ({ ...current, caption }))
@@ -201,7 +204,16 @@ export function CreatePostPage() {
   const handleAddMedia = (files: File[]) => {
     if (files.length === 0) return
 
-    const remaining = MEDIA_MAX_IMAGES - draft.mediaUrls.length
+    const isVideo = files[0]?.type === 'video/mp4'
+    if (isVideo && files.length > 1) {
+      showError('A post can contain one video or up to ten images.')
+      return
+    }
+    if (draft.mediaUrls.length > 0 && (isVideo || draft.mediaType === 'video')) {
+      showError('Replace the existing media before adding a video or images.')
+      return
+    }
+    const remaining = isVideo ? 1 : MEDIA_MAX_IMAGES - draft.mediaUrls.length
     if (remaining <= 0) {
       showError(`You can add up to ${MEDIA_MAX_IMAGES} images.`)
       return
@@ -213,14 +225,14 @@ export function CreatePostPage() {
         showError(`Each file must be ${MEDIA_MAX_SIZE_MB} MB or smaller.`)
         continue
       }
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith('image/') && file.type !== 'video/mp4') {
         showNotification(
-          'Only image files are supported (JPEG/PNG/GIF/WebP).',
+          'Only JPEG, PNG, GIF, WebP, or MP4 files are supported.',
           'warning',
         )
         continue
       }
-      if (file.size > IMAGE_MAX_MB * 1024 * 1024) {
+      if (file.type.startsWith('image/') && file.size > IMAGE_MAX_MB * 1024 * 1024) {
         showError(`Each image must be ${IMAGE_MAX_MB} MB or smaller.`)
         continue
       }
@@ -230,11 +242,14 @@ export function CreatePostPage() {
     if (accepted.length === 0) return
 
     const newUrls = accepted.map((file) => URL.createObjectURL(file))
-    setMediaFiles((current) => [...current, ...accepted])
+    setMediaFiles((current) => ({
+      ...current,
+      ...Object.fromEntries(newUrls.map((url, index) => [url, accepted[index]])),
+    }))
     setDraft((current) => ({
       ...current,
       mediaUrls: [...current.mediaUrls, ...newUrls],
-      mediaType: 'image',
+      mediaType: isVideo ? 'video' : 'image',
     }))
   }
 
@@ -251,17 +266,31 @@ export function CreatePostPage() {
         mediaType: mediaUrls.length > 0 ? 'image' : null,
       }
     })
-    setMediaFiles((current) => current.filter((_, i) => i !== index))
+    const removedUrl = draft.mediaUrls[index]
+    setMediaFiles((current) => {
+      const { [removedUrl]: _removed, ...remaining } = current
+      return remaining
+    })
   }
 
   const handleClearMedia = () => {
     revokeBlobUrls(draft.mediaUrls)
-    setMediaFiles([])
+    setMediaFiles({})
     setDraft((current) => ({
       ...current,
       mediaUrls: [],
       mediaType: null,
     }))
+  }
+
+  const handleMoveMedia = (index: number, direction: -1 | 1) => {
+    setDraft((current) => {
+      const target = index + direction
+      if (target < 0 || target >= current.mediaUrls.length) return current
+      const mediaUrls = [...current.mediaUrls]
+      ;[mediaUrls[index], mediaUrls[target]] = [mediaUrls[target], mediaUrls[index]]
+      return { ...current, mediaUrls }
+    })
   }
 
   const handleToggleAccount = (accountId: number, enabled: boolean) => {
@@ -294,7 +323,7 @@ export function CreatePostPage() {
 
   const resetComposer = () => {
     revokeBlobUrls(draft.mediaUrls)
-    setMediaFiles([])
+    setMediaFiles({})
     setDraft(defaultPostDraft)
     setEditingDraftId(null)
   }
@@ -303,18 +332,22 @@ export function CreatePostPage() {
     setBusyAction('draft')
     setIsPublishing(true)
     try {
-      const mediaUrl = await uploadPrimaryMediaUrl()
+      const media = await uploadPostMedia()
       const selectedAccountIds = resolveConnectedAccountIds(
         draft.selectedAccountIds,
       )
 
-      await createCmsPost({
+      const input = {
         caption: draft.caption,
-        mediaUrl,
-        mediaType: mediaUrl ? 'image' : null,
+        media,
         selectedAccountIds,
         publishMode: 'draft',
-      })
+      } as const
+      if (editingDraftId) {
+        await updateCmsPost({ postId: editingDraftId, ...input })
+      } else {
+        await createCmsPost(input)
+      }
 
       showSuccess('Draft saved.')
       resetComposer()
@@ -364,11 +397,11 @@ export function CreatePostPage() {
       setBusyAction('schedule')
       setIsPublishing(true)
       try {
-        const mediaUrl = await uploadPrimaryMediaUrl()
+        const media = await uploadPostMedia()
         const needsInstagramImage = selectedTargets.some(
           (target) => target.platform === 'instagram',
         )
-        if (needsInstagramImage && !mediaUrl) {
+        if (needsInstagramImage && media.length === 0) {
           showNotification(
             'Instagram scheduled posts require at least one image.',
             'warning',
@@ -376,14 +409,18 @@ export function CreatePostPage() {
           return
         }
 
-        await createCmsPost({
+        const input = {
           caption,
-          mediaUrl,
-          mediaType: mediaUrl ? 'image' : null,
+          media,
           selectedAccountIds: connectedIds,
           publishMode: 'schedule',
           scheduledAt,
-        })
+        } as const
+        if (editingDraftId) {
+          await updateCmsPost({ postId: editingDraftId, ...input })
+        } else {
+          await createCmsPost(input)
+        }
 
         showSuccess('Post scheduled.')
         resetComposer()
@@ -412,7 +449,7 @@ export function CreatePostPage() {
     }
 
     const publicImageUrls = mediaUrls.filter((url) => !url.startsWith('blob:'))
-    const hasImages = mediaFiles.length > 0 || publicImageUrls.length > 0
+    const hasImages = mediaFileList.length > 0 || publicImageUrls.length > 0
 
     const needsInstagramImage = selectedTargets.some(
       (target) => target.platform === 'instagram',
@@ -438,16 +475,16 @@ export function CreatePostPage() {
             const result = await publishFacebook({
               socialAccountId: target.socialAccountId,
               message: caption,
-              imageFiles: mediaFiles,
-              imageUrls: mediaFiles.length > 0 ? [] : publicImageUrls,
+              imageFiles: mediaFileList,
+              imageUrls: mediaFileList.length > 0 ? [] : publicImageUrls,
             })
             publishedNames.push(result.pageName)
           } else {
             const result = await publishInstagram({
               socialAccountId: target.socialAccountId,
               caption,
-              imageFiles: mediaFiles,
-              imageUrls: mediaFiles.length > 0 ? [] : publicImageUrls,
+              imageFiles: mediaFileList,
+              imageUrls: mediaFileList.length > 0 ? [] : publicImageUrls,
             })
             publishedNames.push(result.pageName)
           }
@@ -526,7 +563,7 @@ export function CreatePostPage() {
             <Typography variant="body2" color="text.secondary">
               Add up to {MEDIA_MAX_IMAGES} images, toggle accounts, then publish
               or schedule everywhere selected.
-              {editingDraftId ? ` Editing draft #${editingDraftId}.` : ''}
+              {editingDraftId ? ` Editing post #${editingDraftId}.` : ''}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1}>
@@ -560,6 +597,7 @@ export function CreatePostPage() {
               onCaptionChange={handleCaptionChange}
               onAddMedia={handleAddMedia}
               onRemoveMediaAt={handleRemoveMediaAt}
+              onMoveMedia={handleMoveMedia}
               onClearMedia={handleClearMedia}
               onToggleAccount={handleToggleAccount}
               onPublishModeChange={handlePublishModeChange}

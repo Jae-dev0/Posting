@@ -3,26 +3,28 @@ import { useMemo } from 'react'
 
 import { ListPageToolbar } from '@/components/layout'
 import {
+  useListPermissions,
+  useListRoles,
+  useSyncRolePermissionGrants,
+} from '@/features/platform'
+import {
   PermissionGroupCards,
   PermissionGroupEditorDialog,
   buildPermissionGroups,
   type PermissionGroupTypes,
   type RolePermissionGrant,
 } from '@/features/platform/components/permission-groups'
-import {
-  useListPermissions,
-  useListRoles,
-  useSyncRolePermissionGrants,
-} from '@/features/platform'
 import { useEntityViewDialog } from '@/hooks/use-entity-view-dialog'
-import { PERMISSIONS, useCan } from '@/lib/auth'
+import { PERMISSIONS, useCan, useIsSuperAdmin } from '@/lib/auth'
 import { useSnackbar } from '@/lib/mui'
-import { getErrorMessage } from '@/utils'
 import type { Status } from '@/types'
+import { getErrorMessage } from '@/utils'
 
 export function PlatformPermissionGroupsPage() {
   const { showSuccess, showError } = useSnackbar()
-  const canEdit = useCan(PERMISSIONS.ROLE_EDIT)
+  const isSuperAdmin = useIsSuperAdmin()
+  const hasEditPermission = useCan(PERMISSIONS.ROLE_EDIT)
+  const canEdit = isSuperAdmin && hasEditPermission
   const rolesQuery = useListRoles()
   const permissionsQuery = useListPermissions()
   const { isOpen, entity, openWith, close } =
@@ -41,7 +43,10 @@ export function PlatformPermissionGroupsPage() {
   })
 
   const roles = rolesQuery.data ?? []
-  const catalog = permissionsQuery.data ?? []
+  const catalog = useMemo(
+    () => permissionsQuery.data ?? [],
+    [permissionsQuery.data],
+  )
 
   const groups = useMemo(() => buildPermissionGroups(catalog), [catalog])
 

@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 const EnvSchema = z.object({
+  GENESIS_WEBSITE_ID: z.coerce.number().int().positive().default(1),
+  GENESIS_SITE_URL: z.string().url().default('https://demo2.bookna.com'),
   PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().min(1),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),

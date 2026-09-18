@@ -12,8 +12,8 @@ import {
 } from '@mui/material'
 import { FormEvent, useEffect, useState } from 'react'
 
-import { useSnackbar } from '@/lib/mui/snackbar-hooks'
 import { useIsSuperAdmin } from '@/lib/auth'
+import { useSnackbar } from '@/lib/mui/snackbar-hooks'
 
 import { useCreateUser, useUpdateUser, type ManagedUser } from '../../api'
 import {
@@ -103,11 +103,15 @@ export function UserFormDialog({
   })
 
   const isSubmitting = isCreatePending || isUpdatePending
-  const title = isEditMode ? 'Edit Account' : 'Create Marketing Sub Admin'
+  const title = isEditMode
+    ? 'Edit Account'
+    : isSuperAdmin
+      ? 'Create Marketing Account'
+      : 'Create Marketing Sub Admin'
   const subtitle = isEditMode
     ? 'Update this Marketing account details and access level.'
-    : 'Add a Marketing Sub Admin who can use Marketing only.'
-  const submitLabel = isEditMode ? 'Update Account' : 'Create Sub Admin'
+    : 'Add an account with access to Marketing for this company.'
+  const submitLabel = isEditMode ? 'Update Account' : 'Create Account'
 
   const updateField = <K extends keyof UserFormValues>(
     field: K,
@@ -118,6 +122,7 @@ export function UserFormDialog({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (isSubmitting) return
     setError(null)
 
     const schema = isEditMode ? userFormSchema : createUserFormSchema
@@ -159,7 +164,9 @@ export function UserFormDialog({
       fullWidth
       maxWidth="sm"
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        if (!isSubmitting) onClose()
+      }}
       {...dialogProps}
       slotProps={{
         paper: {
@@ -180,7 +187,7 @@ export function UserFormDialog({
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error ? (
-            <Typography color="error" variant="body2">
+            <Typography color="error" variant="body2" role="alert">
               {error}
             </Typography>
           ) : null}
@@ -188,6 +195,8 @@ export function UserFormDialog({
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               label="First name"
+              name="firstName"
+              required
               value={values.firstName}
               onChange={(event) => updateField('firstName', event.target.value)}
               fullWidth
@@ -195,6 +204,8 @@ export function UserFormDialog({
             />
             <TextField
               label="Last name"
+              name="lastName"
+              required
               value={values.lastName}
               onChange={(event) => updateField('lastName', event.target.value)}
               fullWidth
@@ -203,6 +214,8 @@ export function UserFormDialog({
 
           <TextField
             label="Email"
+            name="email"
+            required
             type="email"
             autoComplete="off"
             value={values.email}

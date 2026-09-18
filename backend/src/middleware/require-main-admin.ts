@@ -8,10 +8,20 @@ export function requireMainAdmin(
   res: Response,
   next: NextFunction,
 ) {
-  if (req.user?.isSuperAdmin || req.user?.role === 'main_admin') {
+  const user = req.user
+  const hasMarketingAdminRole = user?.roleAssignments.some(
+    (assignment) =>
+      assignment.roleName === 'marketing_admin' &&
+      assignment.companyId === user.companyId,
+  )
+  const isLegacyMarketingAdmin =
+    user?.role === 'main_admin' && user.roleAssignments.length === 0
+  if (user?.isSuperAdmin || hasMarketingAdminRole || isLegacyMarketingAdmin) {
     next()
     return
   }
 
-  res.status(403).json({ message: 'Account management requires main admin access' })
+  res
+    .status(403)
+    .json({ message: 'Account management requires main admin access' })
 }

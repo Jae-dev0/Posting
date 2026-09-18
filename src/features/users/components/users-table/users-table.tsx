@@ -26,6 +26,8 @@ export type UsersTableProps = {
   data: ManagedUser[]
   status: Status
   currentUserId?: number
+  isSuperAdmin?: boolean
+  isDeleting?: boolean
   onEdit: (user: ManagedUser) => void
   onDelete: (user: ManagedUser) => void
 }
@@ -34,6 +36,8 @@ export function UsersTable({
   data,
   status,
   currentUserId,
+  isSuperAdmin = false,
+  isDeleting = false,
   onEdit,
   onDelete,
 }: UsersTableProps) {
@@ -54,7 +58,7 @@ export function UsersTable({
   if (data.length === 0) {
     return (
       <Alert severity="info">
-        No accounts yet. Create an admin account to get started.
+        No accounts found. Adjust your filters or create an account.
       </Alert>
     )
   }
@@ -76,6 +80,7 @@ export function UsersTable({
             const { id, fullname, email, role, createdAt } = user
             const isCurrentUser = currentUserId === id
             const isMainAdmin = role === USER_ROLE.MAIN_ADMIN
+            const isProtected = isMainAdmin && !isSuperAdmin
 
             return (
               <TableRow key={id} hover>
@@ -113,27 +118,38 @@ export function UsersTable({
                     spacing={0.5}
                     justifyContent="flex-end"
                   >
-                    <Tooltip title="Edit account">
-                      <IconButton
-                        size="small"
-                        aria-label={`Edit ${fullname}`}
-                        onClick={() => onEdit(user)}
-                      >
-                        <LuPencil size={16} />
-                      </IconButton>
+                    <Tooltip
+                      title={
+                        isProtected
+                          ? 'Only Super Admin can edit Marketing Admins'
+                          : 'Edit account'
+                      }
+                    >
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label={`Edit ${fullname}`}
+                          disabled={isProtected || isDeleting}
+                          onClick={() => onEdit(user)}
+                        >
+                          <LuPencil size={16} />
+                        </IconButton>
+                      </span>
                     </Tooltip>
                     <Tooltip
                       title={
                         isCurrentUser
                           ? 'You cannot delete your own account'
-                          : 'Delete account'
+                          : isProtected
+                            ? 'Only Super Admin can delete Marketing Admins'
+                            : 'Delete account'
                       }
                     >
                       <span>
                         <IconButton
                           size="small"
                           aria-label={`Delete ${fullname}`}
-                          disabled={isCurrentUser}
+                          disabled={isCurrentUser || isProtected || isDeleting}
                           onClick={() => onDelete(user)}
                         >
                           <LuTrash2 size={16} />

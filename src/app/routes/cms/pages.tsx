@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Alert,
+  Box,
   Button,
   Chip,
   MenuItem,
+  Paper,
   Skeleton,
   Stack,
   Table,
@@ -36,6 +38,7 @@ import {
   PageHeader,
 } from '@/components/ui'
 import {
+  SiteContentEditor,
   useCmsDashboard,
   useCreateCmsPage,
   useDeleteCmsPage,
@@ -125,6 +128,7 @@ export function CmsPagesPage() {
   const canPublish = useCan(PERMISSIONS.CMS_PUBLISH)
   const canDelete = useCan(PERMISSIONS.CMS_DELETE)
 
+  const [viewMode, setViewMode] = useState<'list' | 'visual'>('visual')
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search)
   const [pagination, setPagination] = useState({ page: 1, perPage: 10 })
@@ -191,11 +195,48 @@ export function CmsPagesPage() {
     })
   })
 
+  // Visual / Site Content Editor mode
+  if (viewMode === 'visual') {
+    return (
+      <ContentLayout title="Site Content">
+        <Stack direction="row" justifyContent="flex-end" mb={2}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setViewMode('list')}
+            sx={{ textTransform: 'none', color: '#475569', borderColor: '#cbd5e1' }}
+          >
+            ← Switch to Page List
+          </Button>
+        </Stack>
+        <SiteContentEditor />
+      </ContentLayout>
+    )
+  }
+
   return (
     <EntityListPage
       layoutTitle="Pages"
       toolbarTitle="Pages"
+      toolbarSecondaryAction={
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => setViewMode('visual')}
+          sx={{
+            textTransform: 'none',
+            fontSize: '0.75rem',
+            bgcolor: '#795548',
+            '&:hover': { bgcolor: '#5d4037' },
+            py: 0.5,
+            px: 1.5,
+          }}
+        >
+          🖊 Visual Editor
+        </Button>
+      }
       toolbarDescription={
+
         <ListPageShowingCount count={status === 'success' ? total : 0}>
           CMS pages.
         </ListPageShowingCount>
@@ -227,6 +268,47 @@ export function CmsPagesPage() {
             })
           }}
         >
+          {/* Featured Visual Editor Banner Card */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              mb: 3,
+              borderRadius: 2,
+              bgcolor: '#fdfbf7',
+              borderColor: '#e2d9cf',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700} color="#3e2723" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                🖊 Realtime Visual Editor for Genesis (demo2.bookna.com)
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Visually edit heroes, badges, copy, and layout live for demo2.bookna.com.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              onClick={() => setViewMode('visual')}
+              sx={{
+                bgcolor: '#795548',
+                '&:hover': { bgcolor: '#5d4037' },
+                fontWeight: 600,
+                textTransform: 'none',
+                px: 2.5,
+                py: 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Launch Visual Editor ↗
+            </Button>
+          </Paper>
+
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2}>
             <TextField
               size="small"
@@ -244,6 +326,7 @@ export function CmsPagesPage() {
             status={status}
             errorMessage={error instanceof Error ? error.message : undefined}
             onRetry={() => void refetch()}
+            onOpenVisualEditor={() => setViewMode('visual')}
             canPublish={canPublish}
             canDelete={canDelete}
             onPublish={(page) =>
@@ -388,6 +471,7 @@ type CmsPagesTableProps = {
   status: Status
   errorMessage?: string
   onRetry: () => void
+  onOpenVisualEditor?: () => void
   canPublish: boolean
   canDelete: boolean
   onPublish: (page: CmsPage) => void
@@ -400,6 +484,7 @@ function CmsPagesTable({
   status,
   errorMessage,
   onRetry,
+  onOpenVisualEditor,
   canPublish,
   canDelete,
   onPublish,
@@ -433,10 +518,26 @@ function CmsPagesTable({
 
   if (!data.length) {
     return (
-      <EmptyState
-        title="No pages yet"
-        description="Create your first CMS page to get started."
-      />
+      <Stack spacing={2} py={4} alignItems="center">
+        <EmptyState
+          title="No database pages listed yet"
+          description="You can create pages here or use the Realtime Visual Editor to customize demo2.bookna.com."
+        />
+        {onOpenVisualEditor && (
+          <Button
+            variant="contained"
+            onClick={onOpenVisualEditor}
+            sx={{
+              bgcolor: '#795548',
+              '&:hover': { bgcolor: '#5d4037' },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            🖊 Launch Realtime Visual Editor for demo2.bookna.com
+          </Button>
+        )}
+      </Stack>
     )
   }
 

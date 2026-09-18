@@ -1,6 +1,7 @@
 import { Router } from 'express'
 
 import { writeAuditLog } from '../lib/audit.js'
+import { canAccessWebsite, getAccessibleWebsiteIds } from '../lib/cms-access.js'
 import {
   getPublicMediaUrl,
   savePublicMediaFile,
@@ -17,8 +18,10 @@ import { facebookImageUpload } from '../middleware/facebook-image-upload.js'
 import {
   createNavigationSchema,
   createPageSchema,
+  reorderSectionsSchema,
   updateNavigationSchema,
   updatePageSchema,
+  updateSectionSchema,
   upsertSettingSchema,
 } from '../schemas/cms.js'
 
@@ -26,30 +29,30 @@ export const cmsRouter = Router()
 
 cmsRouter.use(requireAuth, resolveTenantScope(), requireTenantCompany)
 
-async function getPrimaryWebsite(companyId: number) {
-  return prisma.website.findFirst({
-    where: { companyId, isPrimary: true },
-    orderBy: { id: 'asc' },
-  })
+async function resolveWebsite(
+  req: AuthenticatedRequest,
+  websiteId: number,
+) {
+  const companyId = req.tenantCompanyId!
+  const website = await prisma.website.findFirst({ where: { id: websiteId, companyId } })
+  if (!website || !(await canAccessWebsite(req, companyId, websiteId))) return null
+  return website
 }
 
-async function resolveWebsiteId(companyId: number, websiteId?: number) {
-  if (websiteId) {
-    const website = await prisma.website.findFirst({
-      where: { id: websiteId, companyId },
-    })
-    return website
-  }
-  return getPrimaryWebsite(companyId)
+async function websiteWhere(req: AuthenticatedRequest) {
+  const companyId = req.tenantCompanyId!
+  const ids = await getAccessibleWebsiteIds(req, companyId)
+  return ids === null ? { companyId } : { companyId, websiteId: { in: ids } }
 }
 
 cmsRouter.get(
   '/websites',
-  requirePermission('cms.view'),
+  requirePermission('website.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
+      const ids = await getAccessibleWebsiteIds(req, req.tenantCompanyId!)
       const websites = await prisma.website.findMany({
-        where: { companyId: req.tenantCompanyId },
+        where: ids === null ? { companyId: req.tenantCompanyId } : { companyId: req.tenantCompanyId, id: { in: ids } },
         orderBy: [{ isPrimary: 'desc' }, { id: 'asc' }],
       })
       res.json(websites)
@@ -61,11 +64,11 @@ cmsRouter.get(
 
 cmsRouter.get(
   '/pages',
-  requirePermission('cms.view'),
+  requirePermission('page.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const pages = await prisma.page.findMany({
-        where: { companyId: req.tenantCompanyId },
+        where: await websiteWhere(req),
         orderBy: { updatedAt: 'desc' },
       })
       res.json(
@@ -83,14 +86,11 @@ cmsRouter.get(
 
 cmsRouter.post(
   '/pages',
-  requirePermission('cms.create'),
+  requirePermission('page.create'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const body = createPageSchema.parse(req.body)
-      const website = await resolveWebsiteId(
-        req.tenantCompanyId!,
-        body.websiteId,
-      )
+      const website = await resolveWebsite(req, body.websiteId)
       if (!website) {
         res.status(404).json({ message: 'Website not found for company' })
         return
@@ -131,12 +131,12 @@ cmsRouter.post(
 
 cmsRouter.get(
   '/pages/:id',
-  requirePermission('cms.view'),
+  requirePermission('page.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const id = Number(req.params.id)
       const page = await prisma.page.findFirst({
-        where: { id, companyId: req.tenantCompanyId },
+        where: { ...(await websiteWhere(req)), id },
         include: { sections: { orderBy: { sortOrder: 'asc' } } },
       })
       if (!page) {
@@ -156,13 +156,13 @@ cmsRouter.get(
 
 cmsRouter.patch(
   '/pages/:id',
-  requirePermission('cms.edit'),
+  requirePermission('page.edit'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const id = Number(req.params.id)
       const body = updatePageSchema.parse(req.body)
       const existing = await prisma.page.findFirst({
-        where: { id, companyId: req.tenantCompanyId },
+        where: { ...(await websiteWhere(req)), id },
       })
       if (!existing) {
         res.status(404).json({ message: 'Page not found' })
@@ -171,7 +171,7 @@ cmsRouter.patch(
 
       if (body.status === 'published') {
         const canPublish = req.user?.isSuperAdmin ||
-          req.user?.permissions.includes('cms.publish')
+          req.user?.permissions.includes('page.publish')
         if (!canPublish) {
           res.status(403).json({ message: 'Publish permission required' })
           return
@@ -211,12 +211,12 @@ cmsRouter.patch(
 
 cmsRouter.delete(
   '/pages/:id',
-  requirePermission('cms.delete'),
+  requirePermission('page.delete'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const id = Number(req.params.id)
       const existing = await prisma.page.findFirst({
-        where: { id, companyId: req.tenantCompanyId },
+        where: { ...(await websiteWhere(req)), id },
       })
       if (!existing) {
         res.status(404).json({ message: 'Page not found' })
@@ -241,11 +241,11 @@ cmsRouter.delete(
 
 cmsRouter.get(
   '/media',
-  requirePermission('cms.view'),
+  requirePermission('media.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const media = await prisma.cmsMedia.findMany({
-        where: { companyId: req.tenantCompanyId },
+        where: await websiteWhere(req),
         orderBy: { createdAt: 'desc' },
       })
       res.json(
@@ -263,7 +263,7 @@ cmsRouter.get(
 
 cmsRouter.post(
   '/media/upload',
-  requirePermission('cms.create'),
+  requirePermission('media.upload'),
   facebookImageUpload.single('image'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -273,7 +273,16 @@ cmsRouter.post(
         return
       }
 
-      const website = await getPrimaryWebsite(req.tenantCompanyId!)
+      const websiteId = Number(req.body.websiteId)
+      if (!Number.isInteger(websiteId)) {
+        res.status(400).json({ message: 'websiteId is required' })
+        return
+      }
+      const website = await resolveWebsite(req, websiteId)
+      if (!website) {
+        res.status(404).json({ message: 'Website not found or not assigned' })
+        return
+      }
       const filename = await savePublicMediaFile({
         buffer: file.buffer,
         mimetype: file.mimetype,
@@ -284,7 +293,7 @@ cmsRouter.post(
       const media = await prisma.cmsMedia.create({
         data: {
           companyId: req.tenantCompanyId!,
-          websiteId: website?.id ?? null,
+          websiteId: website.id,
           filename,
           originalName: file.originalname,
           mimeType: file.mimetype,
@@ -319,11 +328,10 @@ cmsRouter.get(
   requirePermission('settings.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const website = await getPrimaryWebsite(req.tenantCompanyId!)
-      if (!website) {
-        res.json([])
-        return
-      }
+      const websiteId = Number(req.query.websiteId)
+      if (!Number.isInteger(websiteId)) { res.status(400).json({ message: 'websiteId is required' }); return }
+      const website = await resolveWebsite(req, websiteId)
+      if (!website) { res.status(404).json({ message: 'Website not found or not assigned' }); return }
       const settings = await prisma.websiteSetting.findMany({
         where: { companyId: req.tenantCompanyId, websiteId: website.id },
         orderBy: { key: 'asc' },
@@ -341,10 +349,7 @@ cmsRouter.put(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const body = upsertSettingSchema.parse(req.body)
-      const website = await resolveWebsiteId(
-        req.tenantCompanyId!,
-        body.websiteId,
-      )
+      const website = await resolveWebsite(req, body.websiteId)
       if (!website) {
         res.status(404).json({ message: 'Website not found for company' })
         return
@@ -381,11 +386,11 @@ cmsRouter.put(
 
 cmsRouter.get(
   '/navigation',
-  requirePermission('cms.view'),
+  requirePermission('navigation.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const items = await prisma.navigationItem.findMany({
-        where: { companyId: req.tenantCompanyId },
+        where: await websiteWhere(req),
         orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       })
       res.json(items)
@@ -397,14 +402,11 @@ cmsRouter.get(
 
 cmsRouter.post(
   '/navigation',
-  requirePermission('cms.create'),
+  requirePermission('navigation.create'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const body = createNavigationSchema.parse(req.body)
-      const website = await resolveWebsiteId(
-        req.tenantCompanyId!,
-        body.websiteId,
-      )
+      const website = await resolveWebsite(req, body.websiteId)
       if (!website) {
         res.status(404).json({ message: 'Website not found for company' })
         return
@@ -429,13 +431,13 @@ cmsRouter.post(
 
 cmsRouter.patch(
   '/navigation/:id',
-  requirePermission('cms.edit'),
+  requirePermission('navigation.edit'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const id = Number(req.params.id)
       const body = updateNavigationSchema.parse(req.body)
       const existing = await prisma.navigationItem.findFirst({
-        where: { id, companyId: req.tenantCompanyId },
+        where: { ...(await websiteWhere(req)), id },
       })
       if (!existing) {
         res.status(404).json({ message: 'Navigation item not found' })
@@ -460,12 +462,12 @@ cmsRouter.patch(
 
 cmsRouter.delete(
   '/navigation/:id',
-  requirePermission('cms.delete'),
+  requirePermission('navigation.delete'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const id = Number(req.params.id)
       const existing = await prisma.navigationItem.findFirst({
-        where: { id, companyId: req.tenantCompanyId },
+        where: { ...(await websiteWhere(req)), id },
       })
       if (!existing) {
         res.status(404).json({ message: 'Navigation item not found' })
@@ -481,14 +483,16 @@ cmsRouter.delete(
 
 cmsRouter.get(
   '/dashboard',
-  requirePermission('cms.view'),
+  requirePermission('page.view'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const companyId = req.tenantCompanyId!
+      const accessibleWebsiteIds = await getAccessibleWebsiteIds(req, companyId)
+      const websiteScope = accessibleWebsiteIds === null ? {} : { websiteId: { in: accessibleWebsiteIds } }
       const [pages, published, media, recent] = await Promise.all([
-        prisma.page.count({ where: { companyId } }),
-        prisma.page.count({ where: { companyId, status: 'published' } }),
-        prisma.cmsMedia.count({ where: { companyId } }),
+        prisma.page.count({ where: { companyId, ...websiteScope } }),
+        prisma.page.count({ where: { companyId, status: 'published', ...websiteScope } }),
+        prisma.cmsMedia.count({ where: { companyId, ...websiteScope } }),
         prisma.auditLog.findMany({
           where: { companyId },
           take: 8,
@@ -522,5 +526,84 @@ cmsRouter.get(
     } catch (error) {
       next(error)
     }
+  },
+)
+
+cmsRouter.post(
+  '/sections/reorder',
+  requirePermission('page.edit'),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const body = reorderSectionsSchema.parse(req.body)
+      const website = await resolveWebsite(req, body.websiteId)
+      if (!website) {
+        res.status(404).json({ message: 'Website not found for company' })
+        return
+      }
+
+      await prisma.$transaction(
+        body.sections.map((sec) =>
+          prisma.websiteSection.update({
+            where: { id: sec.id },
+            data: { sortOrder: sec.sortOrder },
+          }),
+        ),
+      )
+
+      res.json({ success: true, message: 'Sections reordered successfully' })
+    } catch (error) {
+      next(error)
+    }
+  },
+)
+
+cmsRouter.post(
+  '/pages/:id/publish',
+  requirePermission('page.publish'),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const id = Number(req.params.id)
+      const page = await prisma.page.findFirst({
+        where: { ...(await websiteWhere(req)), id },
+        include: { sections: { orderBy: { sortOrder: 'asc' } } },
+      })
+      if (!page) {
+        res.status(404).json({ message: 'Page not found' })
+        return
+      }
+
+      const updated = await prisma.page.update({
+        where: { id },
+        data: {
+          status: 'published',
+          updatedById: req.user?.id,
+        },
+      })
+
+      await writeAuditLog({
+        companyId: req.tenantCompanyId!,
+        userId: req.user?.id,
+        action: 'page.published',
+        entityType: 'page',
+        entityId: page.id,
+        summary: `Published CMS page "${page.title}"`,
+      })
+
+      res.json({
+        ...updated,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      })
+    } catch (error) {
+      next(error)
+    }
+  },
+)
+
+cmsRouter.post(
+  '/sync/external',
+  requirePermission('page.edit'),
+  (_req, res) => {
+    res.status(410).json({ message: 'Use the Genesis live editor to save and publish website content. The legacy sync endpoint did not deliver content.' })
   },
 )

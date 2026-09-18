@@ -1,6 +1,7 @@
 import { Card, CardContent, Typography } from '@mui/material'
 
 import { ContentLayout } from '@/components/layout'
+import { paths } from '@/config/paths'
 import {
   ScheduledPostsTable,
   usePosts,
@@ -9,10 +10,12 @@ import {
 } from '@/features/posting'
 import { useConfirm } from '@/lib/mui/confirm-hooks'
 import { useSnackbar } from '@/lib/mui/snackbar-hooks'
+import { useNavigate } from 'react-router'
 
 export function ScheduledPostsPage() {
   const { showSuccess, showError } = useSnackbar()
   const confirm = useConfirm()
+  const navigate = useNavigate()
   const query = usePosts('scheduled')
 
   const { mutate: updatePost, isPending } = useUpdatePost({
@@ -69,6 +72,9 @@ export function ScheduledPostsPage() {
             data={data}
             status={status}
             isUpdating={isPending}
+            onEdit={(postId) => {
+              void navigate(`${paths.posting.create.getHref()}?postId=${postId}`)
+            }}
             onCancel={(postId) => {
               void confirm({
                 title: 'Cancel scheduled post?',

@@ -1,4 +1,5 @@
 export const cmsKeys = {
+  visualEditor: (companyId: number | null) => ['cms', 'visual-editor', companyId] as const,
   all: ['cms'] as const,
   dashboard: () => [...cmsKeys.all, 'dashboard'] as const,
   pages: () => [...cmsKeys.all, 'pages'] as const,
@@ -7,4 +8,5 @@ export const cmsKeys = {
   navigation: () => [...cmsKeys.all, 'navigation'] as const,
   settings: () => [...cmsKeys.all, 'settings'] as const,
   users: () => [...cmsKeys.all, 'users'] as const,
+  accountCatalog: () => [...cmsKeys.users(), 'catalog'] as const,
 }

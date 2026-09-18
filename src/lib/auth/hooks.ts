@@ -16,7 +16,6 @@ import {
   type PermissionLike,
 } from './permissions'
 import type { AuthUser } from './types'
-import { usePermissionSession } from './use-permission-session'
 
 export function useAuth() {
   const context = useContext(AuthContext)
@@ -36,7 +35,15 @@ export function useAuthUser(): [AuthUser | null, ReturnType<typeof useAuth>] {
 export function useCanManageAccounts() {
   const { user } = useAuth()
   // Super Admin or Marketing Admin (account management)
-  return Boolean(user?.isSuperAdmin || user?.role === 'main_admin')
+  return Boolean(
+    user?.isSuperAdmin ||
+      user?.roleAssignments?.some(
+        (assignment) =>
+          assignment.roleName === 'marketing_admin' &&
+          assignment.companyId === user.companyId,
+      ) ||
+      (user?.role === 'main_admin' && !user.roleAssignments?.length),
+  )
 }
 
 export function useIsSuperAdmin() {
@@ -92,4 +99,4 @@ export function useCanAccessCompany(companyId: number) {
   return canAccessCompany(user, companyId)
 }
 
-export { usePermissionSession, PERMISSIONS }
+export { PERMISSIONS }
