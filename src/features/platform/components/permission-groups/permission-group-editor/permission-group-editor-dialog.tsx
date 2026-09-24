@@ -8,7 +8,10 @@ import {
   FormDialogTitle,
   LoadingButton,
 } from '@/components/ui'
-import type { PlatformRole, PermissionCatalogItem } from '@/features/platform/api'
+import type {
+  PlatformRole,
+  PermissionCatalogItem,
+} from '@/features/platform/api'
 import type { ID } from '@/types'
 
 import {
@@ -67,7 +70,13 @@ export function PermissionGroupEditorDialog({
   const [draftGrants, setDraftGrants] = useState(() =>
     buildGrantMap(initialGrants),
   )
-  const [isDirty, setIsDirty] = useState(false)
+  const baselineGrants = useMemo(
+    () => buildGrantMap(initialGrants),
+    [initialGrants],
+  )
+  const isDirty = [...draftGrants].some(
+    ([key, granted]) => baselineGrants.get(key) !== granted,
+  )
 
   const groupId = group?.group_id
 
@@ -75,7 +84,6 @@ export function PermissionGroupEditorDialog({
     if (!open || groupId == null) return
     setDraftGrants(buildGrantMap(initialGrants))
     setSelectedRoleId(roles[0]?.id ?? false)
-    setIsDirty(false)
   }, [open, groupId, initialGrants, roles])
 
   const assignedRoleCount = useMemo(() => {
@@ -90,21 +98,29 @@ export function PermissionGroupEditorDialog({
   }, [draftGrants, permissions, roles])
 
   const handleToggle = (permissionId: ID) => {
-    if (readOnly || selectedRoleId === false) return
+    if (
+      readOnly ||
+      isSaving ||
+      selectedRoleId === false ||
+      roles.find((role) => role.id === selectedRoleId)?.name === 'super_admin'
+    )
+      return
     const key = grantKey(selectedRoleId, permissionId)
     setDraftGrants((prev) => {
       const next = new Map(prev)
       next.set(key, !prev.get(key))
       return next
     })
-    setIsDirty(true)
   }
 
   const handleSave = () => {
     if (readOnly || !group || isSaving) return
     const nextGrants: RolePermissionGrant[] = []
     for (const role of roles) {
+      if (role.name === 'super_admin') continue
       for (const permission of permissions) {
+        const key = grantKey(role.id, permission.permission_id)
+        if (draftGrants.get(key) === baselineGrants.get(key)) continue
         nextGrants.push({
           role_id: role.id,
           permission_id: permission.permission_id,
@@ -114,18 +130,16 @@ export function PermissionGroupEditorDialog({
         })
       }
     }
-    onSave?.(nextGrants)
+    if (nextGrants.length > 0) onSave?.(nextGrants)
   }
 
   const handleCancel = () => {
     setDraftGrants(buildGrantMap(initialGrants))
-    setIsDirty(false)
   }
 
   const handleDialogExited = () => {
     setDraftGrants(buildGrantMap([]))
     setSelectedRoleId(roles[0]?.id ?? false)
-    setIsDirty(false)
   }
 
   const title = group ? `${group.name} Permissions` : 'Permissions'
@@ -139,7 +153,9 @@ export function PermissionGroupEditorDialog({
       maxWidth="md"
       {...dialogProps}
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        if (!isSaving) onClose()
+      }}
       slotProps={{
         ...dialogProps?.slotProps,
         transition: {
@@ -150,7 +166,13 @@ export function PermissionGroupEditorDialog({
         },
       }}
     >
-      <FormDialogTitle title={title} subtitle={subtitle} onClose={onClose} />
+      <FormDialogTitle
+        title={title}
+        subtitle={subtitle}
+        onClose={() => {
+          if (!isSaving) onClose()
+        }}
+      />
       <DialogContent>
         {group ? (
           <PermissionGroupEditor
@@ -163,7 +185,7 @@ export function PermissionGroupEditorDialog({
             draftGrants={draftGrants}
             onToggle={handleToggle}
             assignedRoleCount={assignedRoleCount}
-            readOnly={readOnly}
+            readOnly={readOnly || isSaving}
           />
         ) : null}
       </DialogContent>

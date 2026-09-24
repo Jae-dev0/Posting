@@ -112,7 +112,10 @@ export const paths = {
     },
     create: {
       path: '/posting/create',
-      getHref: () => '/posting/create',
+      getHref: (postId?: number | string) =>
+        postId === undefined
+          ? '/posting/create'
+          : `/posting/create?postId=${postId}`,
     },
     history: {
       path: '/posting/history',

@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Alert,
@@ -15,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Link as RouterLink } from 'react-router'
 import { z } from 'zod'
@@ -45,8 +45,8 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { PERMISSIONS, useCan } from '@/lib/auth'
 import { useSnackbar } from '@/lib/mui'
 import { setActiveCompanyId } from '@/lib/tenant-context'
-import { getErrorMessage, getSuccessMessage, paginate } from '@/utils'
 import type { Status } from '@/types'
+import { getErrorMessage, getSuccessMessage, paginate } from '@/utils'
 
 const companyFormSchema = z.object({
   name: z.string().trim().min(1, 'Company name is required'),
@@ -212,9 +212,7 @@ export function PlatformCompaniesPage() {
                 label="Status"
                 value={statusFilter}
                 onChange={(e) => {
-                  setStatusFilter(
-                    e.target.value as 'active' | 'disabled' | '',
-                  )
+                  setStatusFilter(e.target.value as 'active' | 'disabled' | '')
                   setPagination((prev) => ({ ...prev, page: 1 }))
                 }}
                 sx={{ minWidth: 160 }}
@@ -227,17 +225,14 @@ export function PlatformCompaniesPage() {
             <CompanyTables
               data={status === 'success' ? data : []}
               status={status}
-              errorMessage={
-                error instanceof Error ? error.message : undefined
-              }
+              errorMessage={error instanceof Error ? error.message : undefined}
               onRetry={() => void refetch()}
               canEdit={canEdit}
               onToggleStatus={(company) =>
                 updateCompany.mutate({
                   id: company.id,
                   data: {
-                    status:
-                      company.status === 'active' ? 'disabled' : 'active',
+                    status: company.status === 'active' ? 'disabled' : 'active',
                   },
                 })
               }
@@ -314,9 +309,7 @@ export function PlatformCompaniesPage() {
                     </div>
                   )}
                 />
-                <Typography variant="subtitle2">
-                  Optional CMS Admin
-                </Typography>
+                <Typography variant="subtitle2">Optional CMS Admin</Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <Controller
                     name="adminFirstName"
@@ -463,8 +456,14 @@ function CompanyTables({
       </TableHead>
       <TableBody>
         {data.map((company) => {
-          const { id, name, domain, status: companyStatus, userCount, websiteCount } =
-            company
+          const {
+            id,
+            name,
+            domain,
+            status: companyStatus,
+            userCount,
+            websiteCount,
+          } = company
           return (
             <TableRow key={id} hover>
               <TableCell>{name}</TableCell>
@@ -481,7 +480,10 @@ function CompanyTables({
               <TableCell>{websiteCount ?? '—'}</TableCell>
               <TableCell align="right">
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button size="small" onClick={() => onUseInMarketing(company)}>
+                  <Button
+                    size="small"
+                    onClick={() => onUseInMarketing(company)}
+                  >
                     Use in Marketing
                   </Button>
                   <Button
@@ -495,9 +497,7 @@ function CompanyTables({
                   {canEdit ? (
                     <Button
                       size="small"
-                      color={
-                        companyStatus === 'active' ? 'warning' : 'success'
-                      }
+                      color={companyStatus === 'active' ? 'warning' : 'success'}
                       onClick={() => onToggleStatus(company)}
                     >
                       {companyStatus === 'active' ? 'Disable' : 'Enable'}

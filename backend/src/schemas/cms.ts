@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const createPageSchema = z.object({
-  websiteId: z.number().int().positive().optional(),
+  websiteId: z.number().int().positive(),
   title: z.string().trim().min(1).max(200),
   slug: z
     .string()
@@ -27,13 +27,13 @@ export const updatePageSchema = z.object({
 })
 
 export const upsertSettingSchema = z.object({
-  websiteId: z.number().int().positive().optional(),
+  websiteId: z.number().int().positive(),
   key: z.string().trim().min(1).max(100),
   value: z.string(),
 })
 
 export const createNavigationSchema = z.object({
-  websiteId: z.number().int().positive().optional(),
+  websiteId: z.number().int().positive(),
   label: z.string().trim().min(1).max(100),
   href: z.string().trim().min(1).max(500),
   sortOrder: z.number().int().default(0),

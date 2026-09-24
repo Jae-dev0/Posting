@@ -16,6 +16,8 @@ import dayjs, { Dayjs } from 'dayjs'
 import { ChangeEvent, DragEvent, useRef } from 'react'
 import {
   LuCalendar,
+  LuChevronLeft,
+  LuChevronRight,
   LuClock,
   LuImage,
   LuPlus,
@@ -43,6 +45,7 @@ export type CreatePostFormProps = {
   onCaptionChange: (caption: string) => void
   onAddMedia: (files: File[]) => void
   onRemoveMediaAt: (index: number) => void
+  onMoveMedia: (index: number, direction: -1 | 1) => void
   onClearMedia: () => void
   onToggleAccount: (accountId: number, enabled: boolean) => void
   onPublishModeChange: (mode: PostDraft['publishMode']) => void
@@ -58,6 +61,7 @@ export function CreatePostForm({
   onCaptionChange,
   onAddMedia,
   onRemoveMediaAt,
+  onMoveMedia,
   onClearMedia,
   onToggleAccount,
   onPublishModeChange,
@@ -65,8 +69,14 @@ export function CreatePostForm({
   onSaveDraft,
   onPublish,
 }: CreatePostFormProps) {
-  const { caption, mediaUrls, publishMode, scheduledAt, selectedAccountIds } =
-    draft
+  const {
+    caption,
+    mediaUrls,
+    mediaType,
+    publishMode,
+    scheduledAt,
+    selectedAccountIds,
+  } = draft
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scheduledDate = scheduledAt
     ? dayjs(scheduledAt)
@@ -101,7 +111,9 @@ export function CreatePostForm({
                 1. Media
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {mediaUrls.length} / {MEDIA_MAX_IMAGES} images
+                {mediaType === 'video'
+                  ? '1 video'
+                  : `${mediaUrls.length} / ${MEDIA_MAX_IMAGES} images`}
               </Typography>
             </Stack>
 
@@ -129,20 +141,67 @@ export function CreatePostForm({
                         aspectRatio: '4 / 3',
                       }}
                     >
-                      <Box
-                        component="img"
-                        src={url}
-                        alt={`Upload ${index + 1}`}
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block',
-                        }}
-                      />
+                      {mediaType === 'video' ? (
+                        <Box
+                          component="video"
+                          src={url}
+                          controls
+                          aria-label="Selected video"
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          component="img"
+                          src={url}
+                          alt={`Selected image ${index + 1}`}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      )}
+                      {mediaType === 'image' && mediaUrls.length > 1 ? (
+                        <Stack
+                          direction="row"
+                          spacing={0.25}
+                          sx={{ position: 'absolute', left: 4, bottom: 4 }}
+                        >
+                          <IconButton
+                            size="small"
+                            aria-label={`Move image ${index + 1} earlier`}
+                            disabled={index === 0}
+                            onClick={() => onMoveMedia(index, -1)}
+                            sx={{
+                              bgcolor: 'rgba(0,0,0,0.55)',
+                              color: 'common.white',
+                            }}
+                          >
+                            <LuChevronLeft size={14} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            aria-label={`Move image ${index + 1} later`}
+                            disabled={index === mediaUrls.length - 1}
+                            onClick={() => onMoveMedia(index, 1)}
+                            sx={{
+                              bgcolor: 'rgba(0,0,0,0.55)',
+                              color: 'common.white',
+                            }}
+                          >
+                            <LuChevronRight size={14} />
+                          </IconButton>
+                        </Stack>
+                      ) : null}
                       <IconButton
                         size="small"
-                        aria-label={`Remove image ${index + 1}`}
+                        aria-label={`Remove ${mediaType === 'video' ? 'video' : `image ${index + 1}`}`}
                         onClick={() => onRemoveMediaAt(index)}
                         sx={{
                           position: 'absolute',
@@ -157,8 +216,11 @@ export function CreatePostForm({
                       </IconButton>
                     </Box>
                   ))}
-                  {canAddMore ? (
+                  {canAddMore && mediaType !== 'video' ? (
                     <Box
+                      component="button"
+                      type="button"
+                      aria-label="Add more images"
                       onClick={() => fileInputRef.current?.click()}
                       sx={{
                         border: '2px dashed',
@@ -169,6 +231,7 @@ export function CreatePostForm({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
+                        background: 'transparent',
                         bgcolor: 'background.default',
                         '&:hover': { borderColor: 'primary.main' },
                       }}
@@ -378,11 +441,7 @@ export function CreatePostForm({
           </Box>
 
           <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button
-              variant="outlined"
-              onClick={onSaveDraft}
-              disabled={isBusy}
-            >
+            <Button variant="outlined" onClick={onSaveDraft} disabled={isBusy}>
               Save Draft
             </Button>
             <Button

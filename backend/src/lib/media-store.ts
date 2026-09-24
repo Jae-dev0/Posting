@@ -12,6 +12,7 @@ const EXT_BY_MIME: Record<string, string> = {
   'image/png': '.png',
   'image/gif': '.gif',
   'image/webp': '.webp',
+  'video/mp4': '.mp4',
 }
 
 export async function savePublicMediaFile(file: {

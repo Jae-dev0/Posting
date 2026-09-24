@@ -12,8 +12,8 @@ import {
   FormLabelText,
   LoadingButton,
 } from '@/components/ui'
+import { useCreateRole, useUpdateRole } from '@/features/platform/api'
 import type { PlatformRole } from '@/features/platform/api'
-import { useCreateRole, useUpdateRole } from '@/features/platform'
 import { useSnackbar } from '@/lib/mui'
 import { getErrorMessage, getSuccessMessage } from '@/utils'
 
@@ -28,8 +28,8 @@ const emptyFormValues: RoleFormValues = {
 const SYSTEM_ROLES = new Set([
   'super_admin',
   'company_admin',
-  'cms_sub_admin',
   'marketing_admin',
+  'employee',
 ])
 
 export type RoleFormDialogProps = {
@@ -80,9 +80,7 @@ export function RoleFormDialogs({
       showSuccess(getSuccessMessage(role.name, 'created', 'Role'))
     },
     onError: (error) => {
-      showError(
-        getErrorMessage(error, 'Could not create role. Try again.'),
-      )
+      showError(getErrorMessage(error, 'Could not create role. Try again.'))
     },
   })
 
@@ -92,9 +90,7 @@ export function RoleFormDialogs({
       showSuccess(getSuccessMessage(role.name, 'updated', 'Role'))
     },
     onError: (error) => {
-      showError(
-        getErrorMessage(error, 'Could not update role. Try again.'),
-      )
+      showError(getErrorMessage(error, 'Could not update role. Try again.'))
     },
   })
 
@@ -110,9 +106,7 @@ export function RoleFormDialogs({
       id: data.id,
       data: {
         description: formData.description,
-        ...(isSystemRole
-          ? {}
-          : { name: formData.name, scope: formData.scope }),
+        ...(isSystemRole ? {} : { name: formData.name, scope: formData.scope }),
       },
     })
   }

@@ -10,6 +10,8 @@ import {
 } from '@/components/ui'
 import type { PlatformRole } from '@/features/platform/api'
 
+import { getRoleDisplayName } from '../role-labels'
+
 export type RoleViewDialogProps = {
   open: boolean
   onClose: () => void
@@ -56,9 +58,14 @@ export function RoleViewDialogs({
       <FormDialogTitle title="Role Details" onClose={onClose} />
       <DialogContent>
         <Stack spacing={2} pt={1}>
-          <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            flexWrap="wrap"
+          >
             <Typography variant="h6" color="primary.main">
-              {name}
+              {getRoleDisplayName(name)}
             </Typography>
             <Chip
               size="small"
@@ -73,11 +80,7 @@ export function RoleViewDialogs({
             </Typography>
             <Typography variant="body2">{description ?? '—'}</Typography>
           </Stack>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            useFlexGap
-          >
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} useFlexGap>
             <Stack spacing={0.5} flex={1}>
               <Typography variant="caption" color="text.secondary">
                 Assignments

@@ -7,4 +7,5 @@ export const cmsKeys = {
   navigation: () => [...cmsKeys.all, 'navigation'] as const,
   settings: () => [...cmsKeys.all, 'settings'] as const,
   users: () => [...cmsKeys.all, 'users'] as const,
+  accountCatalog: () => [...cmsKeys.users(), 'catalog'] as const,
 }

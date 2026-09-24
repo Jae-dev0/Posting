@@ -123,7 +123,10 @@ export type CreateCmsPageInput = {
 }
 
 export const useCreateCmsPage = (
-  options?: Omit<UseMutationOptions<CmsPage, Error, CreateCmsPageInput>, 'mutationFn'>,
+  options?: Omit<
+    UseMutationOptions<CmsPage, Error, CreateCmsPageInput>,
+    'mutationFn'
+  >,
 ) => {
   const queryClient = useQueryClient()
   return useMutation({

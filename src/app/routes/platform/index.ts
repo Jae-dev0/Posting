@@ -4,6 +4,11 @@ export { PlatformRolesPage } from './roles'
 export { PlatformRolesListPage } from './roles-list'
 export { PlatformPermissionGroupsPage } from './permission-groups'
 export {
+  PlatformMediaPage,
+  PlatformSettingsPage,
+  PlatformWebsitesPage,
+} from './resources'
+export {
   PlatformUsersPage,
   PlatformAuditPage,
   PlatformPlaceholderPage,

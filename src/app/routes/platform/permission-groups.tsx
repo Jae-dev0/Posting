@@ -1,7 +1,15 @@
-import { Stack, Typography } from '@mui/material'
 import { useMemo } from 'react'
 
-import { ListPageToolbar } from '@/components/layout'
+import {
+  EntityListPage,
+  ListPageShowingCount,
+  PagedTableCard,
+} from '@/components/layout'
+import {
+  useListPermissions,
+  useListRoles,
+  useSyncRolePermissionGrants,
+} from '@/features/platform'
 import {
   PermissionGroupCards,
   PermissionGroupEditorDialog,
@@ -9,20 +17,17 @@ import {
   type PermissionGroupTypes,
   type RolePermissionGrant,
 } from '@/features/platform/components/permission-groups'
-import {
-  useListPermissions,
-  useListRoles,
-  useSyncRolePermissionGrants,
-} from '@/features/platform'
 import { useEntityViewDialog } from '@/hooks/use-entity-view-dialog'
-import { PERMISSIONS, useCan } from '@/lib/auth'
+import { PERMISSIONS, useCan, useIsSuperAdmin } from '@/lib/auth'
 import { useSnackbar } from '@/lib/mui'
-import { getErrorMessage } from '@/utils'
 import type { Status } from '@/types'
+import { getErrorMessage } from '@/utils'
 
 export function PlatformPermissionGroupsPage() {
   const { showSuccess, showError } = useSnackbar()
-  const canEdit = useCan(PERMISSIONS.ROLE_EDIT)
+  const isSuperAdmin = useIsSuperAdmin()
+  const hasEditPermission = useCan(PERMISSIONS.ROLE_EDIT)
+  const canEdit = isSuperAdmin && hasEditPermission
   const rolesQuery = useListRoles()
   const permissionsQuery = useListPermissions()
   const { isOpen, entity, openWith, close } =
@@ -41,7 +46,10 @@ export function PlatformPermissionGroupsPage() {
   })
 
   const roles = rolesQuery.data ?? []
-  const catalog = permissionsQuery.data ?? []
+  const catalog = useMemo(
+    () => permissionsQuery.data ?? [],
+    [permissionsQuery.data],
+  )
 
   const groups = useMemo(() => buildPermissionGroups(catalog), [catalog])
 
@@ -73,34 +81,43 @@ export function PlatformPermissionGroupsPage() {
   }
 
   return (
-    <Stack spacing={2}>
-      <ListPageToolbar
-        title="Permission Groups"
-        description={
-          <Typography variant="body2" color="text.secondary">
-            Module-level permission sets assigned to roles.
-          </Typography>
-        }
-      />
-
-      <PermissionGroupCards
-        data={status === 'success' ? groups : []}
-        permissions={catalog}
-        roles={roles}
-        status={status}
-        onManage={openWith}
-      />
-
-      <PermissionGroupEditorDialog
-        open={isOpen}
-        group={entity}
-        catalog={catalog}
-        roles={roles}
-        onClose={close}
-        onSave={handleSave}
-        readOnly={!canEdit}
-        isSaving={syncGrants.isPending}
-      />
-    </Stack>
+    <EntityListPage
+      layoutTitle="Permission Groups"
+      toolbarTitle="Permission Groups"
+      toolbarDescription={
+        <ListPageShowingCount count={status === 'success' ? groups.length : 0}>
+          module-level permission sets assigned to roles.
+        </ListPageShowingCount>
+      }
+      pagedTable={
+        <PagedTableCard
+          count={status === 'success' ? groups.length : 0}
+          page={0}
+          rowsPerPage={groups.length || 10}
+          onPageChange={() => undefined}
+          onRowsPerPageChange={() => undefined}
+        >
+          <PermissionGroupCards
+            data={status === 'success' ? groups : []}
+            permissions={catalog}
+            roles={roles}
+            status={status}
+            onManage={openWith}
+          />
+        </PagedTableCard>
+      }
+      footer={
+        <PermissionGroupEditorDialog
+          open={isOpen}
+          group={entity}
+          catalog={catalog}
+          roles={roles}
+          onClose={close}
+          onSave={handleSave}
+          readOnly={!canEdit}
+          isSaving={syncGrants.isPending}
+        />
+      }
+    />
   )
 }

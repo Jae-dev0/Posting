@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
 import {
   Alert,
+  Button,
   Chip,
+  IconButton,
   Skeleton,
   Stack,
   Table,
@@ -11,6 +12,8 @@ import {
   TableRow,
   TextField,
 } from '@mui/material'
+import { useMemo, useState } from 'react'
+import { LuTrash2 } from 'react-icons/lu'
 
 import {
   EmptyState,
@@ -21,15 +24,27 @@ import {
 import {
   useListAuditLogs,
   useListPlatformUsers,
+  useDeletePlatformUser,
+  useUpdatePlatformUserStatus,
   type AuditLog,
   type PlatformUser,
 } from '@/features/platform'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
-import { formatDate, paginate } from '@/utils'
+import { useSnackbar } from '@/lib/mui'
 import type { Status } from '@/types'
+import { formatDate, paginate } from '@/utils'
 
 export function PlatformUsersPage() {
+  const { showSuccess, showError } = useSnackbar()
   const { data: users = [], status, error } = useListPlatformUsers()
+  const updateStatus = useUpdatePlatformUserStatus({
+    onSuccess: (user) => showSuccess(`${user.fullname} is now ${user.status}.`),
+    onError: (mutationError) => showError(mutationError.message),
+  })
+  const deleteUser = useDeletePlatformUser({
+    onSuccess: () => showSuccess('User deleted.'),
+    onError: (mutationError) => showError(mutationError.message),
+  })
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search)
   const [pagination, setPagination] = useState({ page: 1, perPage: 10 })
@@ -91,6 +106,14 @@ export function PlatformUsersPage() {
             data={status === 'success' ? data : []}
             status={status}
             errorMessage={error instanceof Error ? error.message : undefined}
+            onToggleStatus={(user) =>
+              updateStatus.mutate({
+                id: user.id,
+                status: user.status === 'active' ? 'disabled' : 'active',
+              })
+            }
+            onDelete={(user) => deleteUser.mutate(user.id)}
+            isMutating={updateStatus.isPending || deleteUser.isPending}
           />
         </PagedTableCard>
       }
@@ -102,21 +125,32 @@ type UsersTablesProps = {
   data: PlatformUser[]
   status: Status
   errorMessage?: string
+  onToggleStatus: (user: PlatformUser) => void
+  onDelete: (user: PlatformUser) => void
+  isMutating: boolean
 }
 
 function getAccountDepartment(user: PlatformUser): string {
   const roleNames = user.platformRoles.map((r) => r.roleName)
-  if (roleNames.includes('super_admin')) return 'Super Admin'
+  if (roleNames.includes('super_admin')) return 'Main Admin'
   if (roleNames.includes('company_admin')) return 'CMS Admin'
-  if (roleNames.includes('cms_sub_admin')) return 'CMS Sub Admin'
-  if (roleNames.includes('marketing_admin') || user.marketingRole === 'main_admin') {
+  if (
+    roleNames.includes('marketing_admin') ||
+    user.marketingRole === 'main_admin'
+  ) {
     return 'Marketing Admin'
   }
-  if (user.marketingRole === 'admin') return 'Marketing Sub Admin'
-  return 'User'
+  return 'Employee'
 }
 
-function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
+function UsersTables({
+  data,
+  status,
+  errorMessage,
+  onToggleStatus,
+  onDelete,
+  isMutating,
+}: UsersTablesProps) {
   if (status === 'pending') {
     return (
       <Stack spacing={1}>
@@ -129,9 +163,7 @@ function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
 
   if (status === 'error') {
     return (
-      <Alert severity="error">
-        {errorMessage ?? 'Could not load users.'}
-      </Alert>
+      <Alert severity="error">{errorMessage ?? 'Could not load users.'}</Alert>
     )
   }
 
@@ -154,6 +186,7 @@ function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
           <TableCell>Department</TableCell>
           <TableCell>Roles</TableCell>
           <TableCell>Status</TableCell>
+          <TableCell align="right">Management</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -178,6 +211,25 @@ function UsersTables({ data, status, errorMessage }: UsersTablesProps) {
                   color="primary"
                   label={getAccountDepartment(user)}
                 />
+              </TableCell>
+              <TableCell align="right">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  disabled={isMutating}
+                  onClick={() => onToggleStatus(user)}
+                >
+                  {userStatus === 'active' ? 'Disable' : 'Activate'}
+                </Button>
+                <IconButton
+                  size="small"
+                  color="error"
+                  disabled={isMutating}
+                  aria-label={`Delete ${fullname}`}
+                  onClick={() => onDelete(user)}
+                >
+                  <LuTrash2 />
+                </IconButton>
               </TableCell>
               <TableCell>
                 {platformRoles.map((r) => r.roleName).join(', ') || '—'}

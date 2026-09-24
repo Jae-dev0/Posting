@@ -10,6 +10,15 @@ export const cmsPostSchema = z.object({
   caption: z.string(),
   mediaUrl: z.string().nullable(),
   mediaType: z.enum(['image', 'video']).nullable().optional(),
+  media: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        type: z.enum(['image', 'video']),
+        position: z.number(),
+      }),
+    )
+    .default([]),
   publishMode: z.enum(['now', 'schedule', 'draft']).optional(),
   status: z.string(),
   scheduledAt: z.string().nullable().optional(),
@@ -39,8 +48,7 @@ const queryFn = async ({
   status?: PostListStatus
   signal?: AbortSignal
 }): Promise<CmsPost[]> => {
-  const params =
-    status && status !== 'all' ? { status } : undefined
+  const params = status && status !== 'all' ? { status } : undefined
   const res = await api.get('/api/posts', { params, signal })
   return cmsPostsSchema.parse(res.data)
 }

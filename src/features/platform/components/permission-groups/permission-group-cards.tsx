@@ -12,7 +12,10 @@ import {
 } from '@mui/material'
 
 import { EmptyState } from '@/components/layout'
-import type { PlatformRole, PermissionCatalogItem } from '@/features/platform/api'
+import type {
+  PlatformRole,
+  PermissionCatalogItem,
+} from '@/features/platform/api'
 import type { Status } from '@/types'
 
 import {

@@ -12,6 +12,7 @@ import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
 import { createPostSchema, updatePostSchema } from '../schemas/posting.js'
 
 const postInclude = {
+  media: { orderBy: { position: 'asc' } },
   accounts: {
     include: {
       account: true,
@@ -152,8 +153,7 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
     const body = createPostSchema.parse(req.body)
     const {
       caption,
-      mediaUrl,
-      mediaType,
+      media,
       selectedAccountIds,
       publishMode,
       scheduledAt,
@@ -233,8 +233,8 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
         companyId,
         createdById: userId,
         caption: caption.trim() || '(untitled draft)',
-        mediaUrl: mediaUrl ?? null,
-        mediaType: mediaType ?? null,
+        mediaUrl: media[0]?.url ?? null,
+        mediaType: media[0]?.type ?? null,
         publishMode: mode,
         status,
         publishedAt,
@@ -242,6 +242,7 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
         accounts: {
           create: selectedAccountIds.map((accountId) => ({ accountId })),
         },
+        media: { create: media.map((item, position) => ({ ...item, position })) },
       },
       include: postInclude,
     })
@@ -294,8 +295,19 @@ postsRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
     }
 
     const body = updatePostSchema.parse(req.body)
-    const { action, caption, mediaUrl, mediaType, selectedAccountIds, scheduledAt } =
+    const { action, caption, media, selectedAccountIds, scheduledAt } =
       body
+
+    const isContentEdit =
+      caption !== undefined || media !== undefined || selectedAccountIds !== undefined
+    if (
+      isContentEdit &&
+      existing.status !== PostStatus.draft &&
+      existing.status !== PostStatus.scheduled
+    ) {
+      res.status(400).json({ message: 'Only draft or scheduled posts can be edited' })
+      return
+    }
 
     if (selectedAccountIds) {
       const accounts = await prisma.connectedAccount.findMany({
@@ -385,12 +397,21 @@ postsRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
         }
       }
 
+      if (media !== undefined) {
+        await tx.postMedia.deleteMany({ where: { postId: id } })
+        if (media.length > 0) {
+          await tx.postMedia.createMany({
+            data: media.map((item, position) => ({ postId: id, ...item, position })),
+          })
+        }
+      }
+
       return tx.post.update({
         where: { id },
         data: {
           caption: caption !== undefined ? caption.trim() || existing.caption : undefined,
-          mediaUrl: mediaUrl !== undefined ? mediaUrl : undefined,
-          mediaType: mediaType !== undefined ? mediaType : undefined,
+          mediaUrl: media !== undefined ? (media[0]?.url ?? null) : undefined,
+          mediaType: media !== undefined ? (media[0]?.type ?? null) : undefined,
           status: nextStatus,
           publishMode: nextMode,
           scheduledAt: nextScheduledAt,

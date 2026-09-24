@@ -9,6 +9,15 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import {
+  LuBuilding2,
+  LuClipboardList,
+  LuGlobe,
+  LuImage,
+  LuSettings,
+  LuShield,
+  LuUsers,
+} from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router'
 
 import { ContentLayout } from '@/components/layout'
@@ -16,6 +25,51 @@ import { PageHeader } from '@/components/ui'
 import { paths } from '@/config/paths'
 import { usePlatformDashboard } from '@/features/platform'
 import { formatDate } from '@/utils'
+
+const managementItems = [
+  {
+    label: 'Companies',
+    description: 'Create, activate, and manage tenants',
+    href: paths.platform.companies.getHref(),
+    icon: LuBuilding2,
+  },
+  {
+    label: 'Websites',
+    description: 'Manage every company website',
+    href: paths.platform.websites.getHref(),
+    icon: LuGlobe,
+  },
+  {
+    label: 'Users',
+    description: 'Activate, disable, or remove accounts',
+    href: paths.platform.users.getHref(),
+    icon: LuUsers,
+  },
+  {
+    label: 'Roles & Permissions',
+    description: 'Control platform access and grants',
+    href: paths.platform.roles.getHref(),
+    icon: LuShield,
+  },
+  {
+    label: 'Media',
+    description: 'Review media across all companies',
+    href: paths.platform.media.getHref(),
+    icon: LuImage,
+  },
+  {
+    label: 'Audit Logs',
+    description: 'Inspect administrative activity',
+    href: paths.platform.audit.getHref(),
+    icon: LuClipboardList,
+  },
+  {
+    label: 'System Settings',
+    description: 'Configure website-level settings',
+    href: paths.platform.settings.getHref(),
+    icon: LuSettings,
+  },
+] as const
 
 export function PlatformDashboardPage() {
   const { data, status, error, refetch } = usePlatformDashboard()
@@ -110,6 +164,51 @@ export function PlatformDashboardPage() {
 
         <Card variant="outlined">
           <CardContent>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  Management Center
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Super Admin controls for every company and platform resource.
+                </Typography>
+              </Box>
+              <Grid container spacing={1.5}>
+                {managementItems.map(
+                  ({ label, description, href, icon: Icon }) => (
+                    <Grid key={href} size={{ xs: 12, sm: 6, lg: 4 }}>
+                      <Button
+                        component={RouterLink}
+                        to={href}
+                        variant="outlined"
+                        color="inherit"
+                        startIcon={<Icon aria-hidden="true" />}
+                        sx={{
+                          width: '100%',
+                          minHeight: 72,
+                          justifyContent: 'flex-start',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body2" fontWeight={700}>
+                            {label}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {description}
+                          </Typography>
+                        </Box>
+                      </Button>
+                    </Grid>
+                  ),
+                )}
+              </Grid>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Card variant="outlined">
+          <CardContent>
             <Stack direction="row" spacing={1} alignItems="center">
               <Typography fontWeight={600}>System Status</Typography>
               <Chip
@@ -130,7 +229,9 @@ export function PlatformDashboardPage() {
                   Company Overview
                 </Typography>
                 {companyOverview.length === 0 ? (
-                  <Typography color="text.secondary">No companies yet</Typography>
+                  <Typography color="text.secondary">
+                    No companies yet
+                  </Typography>
                 ) : (
                   <Stack spacing={1.5}>
                     {companyOverview.map((company) => {

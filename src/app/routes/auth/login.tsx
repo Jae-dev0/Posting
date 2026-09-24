@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Alert,
@@ -8,6 +7,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router'
 
@@ -57,11 +57,7 @@ export function Login() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(false)
 
-  const {
-    control,
-    handleSubmit,
-    formState,
-  } = useForm<LoginFormValues>({
+  const { control, handleSubmit, formState } = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
       email: '',
@@ -135,7 +131,8 @@ export function Login() {
                       borderRadius: `${INPUT_BORDER_RADIUS_PX}px`,
                       height: BUTTON_HEIGHT_PX,
                       '&:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #ffffff inset !important',
+                        WebkitBoxShadow:
+                          '0 0 0 1000px #ffffff inset !important',
                         WebkitTextFillColor: 'inherit !important',
                       },
                     },
@@ -163,7 +160,8 @@ export function Login() {
                       borderRadius: `${INPUT_BORDER_RADIUS_PX}px`,
                       height: BUTTON_HEIGHT_PX,
                       '&:-webkit-autofill': {
-                        WebkitBoxShadow: '0 0 0 1000px #ffffff inset !important',
+                        WebkitBoxShadow:
+                          '0 0 0 1000px #ffffff inset !important',
                         WebkitTextFillColor: 'inherit !important',
                       },
                     },
@@ -206,6 +204,3 @@ export function Login() {
     </ContentLayout>
   )
 }
-
-
-

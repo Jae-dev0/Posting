@@ -23,10 +23,7 @@ const permissionsQueryFn = async ({
 }
 
 export const useListPermissions = (options?: {
-  query?: Omit<
-    UseQueryOptions<PermissionCatalogItem[]>,
-    'queryKey' | 'queryFn'
-  >
+  query?: Omit<UseQueryOptions<PermissionCatalogItem[]>, 'queryKey' | 'queryFn'>
 }) => {
   return useQuery({
     ...options?.query,

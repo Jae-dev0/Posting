@@ -1,5 +1,6 @@
 export * from './components/platform-layout'
 export * from './components/platform-sidebar'
+export * from './components/platform-top-nav'
 export * from './components/roles'
 export * from './components/permission-groups'
 export * from './api'

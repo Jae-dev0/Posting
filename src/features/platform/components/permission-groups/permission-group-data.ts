@@ -1,4 +1,7 @@
-import type { PlatformRole, PermissionCatalogItem } from '@/features/platform/api'
+import type {
+  PlatformRole,
+  PermissionCatalogItem,
+} from '@/features/platform/api'
 import type { ID } from '@/types'
 
 export type PermissionGroupTypes = {
@@ -114,7 +117,13 @@ export function buildPermissionGroups(
       }
     })
     .sort((a, b) => a.order - b.order)
-    .map(({ order: _order, ...group }) => group)
+    .map(({ group_id, name, description, is_active, prefix }) => ({
+      group_id,
+      name,
+      description,
+      is_active,
+      prefix,
+    }))
 }
 
 export function getPermissionsByGroup(
@@ -159,7 +168,7 @@ export function buildRolePermissionGrants(
     return [...permissionIds].map((permission_id) => ({
       role_id: role.id,
       permission_id,
-      granted: grantedIds.has(permission_id),
+      granted: role.name === 'super_admin' || grantedIds.has(permission_id),
     }))
   })
 }

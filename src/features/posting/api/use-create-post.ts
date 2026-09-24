@@ -12,8 +12,7 @@ import { cmsPostSchema, type CmsPost } from './use-posts'
 
 export type CreatePostInput = {
   caption: string
-  mediaUrl?: string | null
-  mediaType?: 'image' | 'video' | null
+  media?: Array<{ url: string; type: 'image' | 'video' }>
   selectedAccountIds: number[]
   publishMode: 'now' | 'schedule' | 'draft'
   scheduledAt?: string | null
@@ -44,8 +43,7 @@ export const useCreatePost = (options?: UseCreatePostOptions) => {
 export type UpdatePostInput = {
   postId: number
   caption?: string
-  mediaUrl?: string | null
-  mediaType?: 'image' | 'video' | null
+  media?: Array<{ url: string; type: 'image' | 'video' }>
   selectedAccountIds?: number[]
   scheduledAt?: string | null
   action?:
@@ -100,6 +98,7 @@ export const useDeletePost = (options?: UseDeletePostOptions) => {
 const uploadMediaSchema = z.object({
   filename: z.string(),
   url: z.string().url(),
+  type: z.enum(['image', 'video']),
 })
 
 export type UseUploadMediaOptions = Omit<
@@ -111,7 +110,7 @@ export const useUploadMedia = (options?: UseUploadMediaOptions) => {
   return useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData()
-      formData.append('image', file)
+      formData.append('media', file)
       const res = await api.post('/api/media/upload', formData)
       return uploadMediaSchema.parse(res.data)
     },

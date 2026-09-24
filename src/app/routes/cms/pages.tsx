@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Alert,
@@ -15,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -50,8 +50,13 @@ import {
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { PERMISSIONS, useCan } from '@/lib/auth'
 import { useSnackbar } from '@/lib/mui'
-import { formatDate, getErrorMessage, getSuccessMessage, paginate } from '@/utils'
 import type { Status } from '@/types'
+import {
+  formatDate,
+  getErrorMessage,
+  getSuccessMessage,
+  paginate,
+} from '@/utils'
 
 export function CmsDashboardPage() {
   const { data, status, error } = useCmsDashboard()
@@ -66,7 +71,9 @@ export function CmsDashboardPage() {
         <Typography color="text.secondary">Loading…</Typography>
       ) : status === 'error' ? (
         <Alert severity="error">
-          {error instanceof Error ? error.message : 'Failed to load CMS dashboard'}
+          {error instanceof Error
+            ? error.message
+            : 'Failed to load CMS dashboard'}
         </Alert>
       ) : (
         <Stack spacing={2}>
@@ -85,7 +92,9 @@ export function CmsDashboardPage() {
           </Stack>
           <Typography fontWeight={600}>Recent activity</Typography>
           {data.recentActivity.length === 0 ? (
-            <Typography color="text.secondary">No recent CMS activity</Typography>
+            <Typography color="text.secondary">
+              No recent CMS activity
+            </Typography>
           ) : (
             data.recentActivity.map((log) => (
               <Typography key={log.id} variant="body2">

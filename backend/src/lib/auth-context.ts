@@ -1,4 +1,10 @@
-import type { Permission, Role, User, UserRoleAssignment } from '@prisma/client'
+import type {
+  Permission,
+  Role,
+  User,
+  UserRoleAssignment,
+  WebsiteAccessMode,
+} from '@prisma/client'
 
 import { ROLE_NAMES, type PermissionName } from './permissions.js'
 import { mapUser } from './user-mapper.js'
@@ -9,6 +15,7 @@ export type RoleAssignmentWithRole = UserRoleAssignment & {
 
 export type AuthContextUser = ReturnType<typeof mapUser> & {
   status: User['status']
+  websiteAccessMode: WebsiteAccessMode
   isSuperAdmin: boolean
   permissions: PermissionName[]
   roleAssignments: Array<{
@@ -26,8 +33,20 @@ export function buildAuthContext(
   const permissionSet = new Set<PermissionName>()
   let isSuperAdmin = false
 
-  for (const assignment of assignments) {
-    if (assignment.role.name === ROLE_NAMES.SUPER_ADMIN) {
+  // Never merge another company's grants into the user's home-company session.
+  const applicableAssignments = assignments.filter((assignment) =>
+    assignment.role.scope === 'platform'
+      ? assignment.companyId === null
+      : assignment.companyId === user.companyId &&
+        (assignment.role.companyId == null ||
+          assignment.role.companyId === user.companyId),
+  )
+
+  for (const assignment of applicableAssignments) {
+    if (
+      assignment.role.name === ROLE_NAMES.SUPER_ADMIN &&
+      assignment.role.scope === 'platform'
+    ) {
       isSuperAdmin = true
     }
     for (const rp of assignment.role.permissions) {
@@ -38,9 +57,10 @@ export function buildAuthContext(
   return {
     ...mapUser(user),
     status: user.status,
+    websiteAccessMode: user.websiteAccessMode,
     isSuperAdmin,
     permissions: [...permissionSet],
-    roleAssignments: assignments.map((a) => ({
+    roleAssignments: applicableAssignments.map((a) => ({
       roleId: a.roleId,
       roleName: a.role.name,
       scope: a.role.scope,

@@ -20,11 +20,6 @@ export type EntityListPageProps = {
   footer?: ReactNode
 }
 
-/**
- * Jacliner settings-CRUD page shell.
- * Prefer this for standalone list pages. Nested tab children (e.g. Roles under
- * Roles & Permissions) should use ListPageToolbar + PagedTableCard directly.
- */
 export function EntityListPage({
   layoutTitle,
   toolbarTitle,
@@ -48,8 +43,4 @@ export function EntityListPage({
   )
 }
 
-export {
-  EmptyState,
-  ListPagePrimaryAddIcon,
-  ListPageShowingCount,
-}
+export { EmptyState, ListPagePrimaryAddIcon, ListPageShowingCount }

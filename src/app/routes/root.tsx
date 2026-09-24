@@ -1,5 +1,5 @@
-import { Outlet, useLocation, useNavigate } from 'react-router'
 import { LuBuilding2, LuGlobe, LuMegaphone } from 'react-icons/lu'
+import { Outlet, useLocation, useNavigate } from 'react-router'
 
 import {
   DashboardLayout,
@@ -7,6 +7,8 @@ import {
   buildDepartmentTopNavItems,
 } from '@/components/layout'
 import { paths } from '@/config/paths'
+import { CmsTopNav } from '@/features/cms'
+import { PlatformTopNav } from '@/features/platform'
 import { PostingTopNav } from '@/features/posting'
 import {
   getDepartmentFromPath,
@@ -49,8 +51,14 @@ export function AppRoot() {
   })
 
   const showDepartmentSwitcher = departmentNavItems.length > 1
-  const showMarketingTopNav =
-    department === 'marketing' && session.canAccessMarketing
+  const topNav =
+    department === 'platform' && session.canAccessPlatform ? (
+      <PlatformTopNav />
+    ) : department === 'cms' && session.canAccessCms ? (
+      <CmsTopNav />
+    ) : department === 'marketing' && session.canAccessMarketing ? (
+      <PostingTopNav />
+    ) : undefined
 
   return (
     <DashboardLayout
@@ -64,7 +72,6 @@ export function AppRoot() {
             }
           : null
       }
-      enableDrawer={true}
       brandTitle={brand.title}
       brandHref={brand.href}
       brandIcon={brand.icon}
@@ -77,7 +84,7 @@ export function AppRoot() {
           />
         ) : undefined
       }
-      navItems={showMarketingTopNav ? <PostingTopNav /> : undefined}
+      navItems={topNav}
       onLogout={() => {
         logout()
         void navigate(paths.auth.login.getHref(), { replace: true })

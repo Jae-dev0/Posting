@@ -1,9 +1,9 @@
-import type { AuthUser } from './types'
 import {
   canAccessCms,
   canAccessMarketing,
   canAccessPlatform,
 } from './permissions'
+import type { AuthUser } from './types'
 
 export type AppDepartment = 'platform' | 'cms' | 'marketing'
 
@@ -53,11 +53,8 @@ export function getRoleLabel(user: AuthUser | null | undefined) {
 
   const roleNames = user.roleAssignments?.map((a) => a.roleName) ?? []
   if (roleNames.includes('company_admin')) return 'CMS Admin'
-  if (roleNames.includes('cms_sub_admin')) return 'CMS Sub Admin'
   if (roleNames.includes('marketing_admin') || user.role === 'main_admin') {
     return 'Marketing Admin'
   }
-  if (hasMarketingRole(user)) return 'Marketing Sub Admin'
-  if (hasCmsRole(user)) return 'CMS Sub Admin'
-  return 'User'
+  return 'Employee'
 }

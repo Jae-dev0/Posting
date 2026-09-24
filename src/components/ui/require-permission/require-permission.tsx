@@ -5,11 +5,7 @@ import { Navigate } from 'react-router'
 import { paths } from '@/config/paths'
 import { getDepartmentHomePath } from '@/lib/auth/departments'
 import { useAuth, useHomeDepartment } from '@/lib/auth/hooks'
-import {
-  can,
-  canAny,
-  type PermissionLike,
-} from '@/lib/auth/permissions'
+import { can, canAny, type PermissionLike } from '@/lib/auth/permissions'
 
 export type RequirePermissionProps = {
   /** Single permission, or any-of list. */
@@ -51,10 +47,7 @@ export function RequirePermission({
   }
 
   return (
-    <Navigate
-      to={redirectTo ?? getDepartmentHomePath(department)}
-      replace
-    />
+    <Navigate to={redirectTo ?? getDepartmentHomePath(department)} replace />
   )
 }
 

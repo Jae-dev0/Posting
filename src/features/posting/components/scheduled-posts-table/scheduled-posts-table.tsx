@@ -1,13 +1,8 @@
 import {
   Alert,
-  Box,
   Button,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -21,6 +16,13 @@ import { DateTimePicker } from '@mui/x-date-pickers'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState } from 'react'
 
+import { EmptyState } from '@/components/layout'
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  FormDialogTitle,
+} from '@/components/ui/form-dialog'
 import type { Status } from '@/types/common'
 
 import type { ScheduledPost } from '../../types'
@@ -29,16 +31,20 @@ import { getPlatformIcon, getPlatformLabel } from '../platform-utils'
 export type ScheduledPostsTableProps = {
   data: ScheduledPost[]
   status: Status
+  errorMessage?: string
   onCancel?: (postId: number) => void
   onReschedule?: (postId: number, scheduledAt: string) => void
+  onEdit?: (postId: number) => void
   isUpdating?: boolean
 }
 
 export function ScheduledPostsTable({
   data,
   status,
+  errorMessage,
   onCancel,
   onReschedule,
+  onEdit,
   isUpdating = false,
 }: ScheduledPostsTableProps) {
   const [reschedulePostId, setReschedulePostId] = useState<number | null>(null)
@@ -46,30 +52,37 @@ export function ScheduledPostsTable({
     dayjs().add(1, 'hour'),
   )
 
-  if (status === 'pending') {
+  const renderContent = () => {
+    if (status === 'pending') {
+      return (
+        <Stack spacing={1}>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} height={36} />
+          ))}
+        </Stack>
+      )
+    }
+
+    if (status === 'error') {
+      return (
+        <Alert severity="error">
+          {errorMessage ?? 'Unable to load scheduled posts. Please try again.'}
+        </Alert>
+      )
+    }
+
+    if (data.length === 0) {
+      return (
+        <EmptyState
+          title="No scheduled posts yet"
+          description="Schedule a post and it will appear here until it is published."
+        />
+      )
+    }
+
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress color="primary" />
-      </Box>
-    )
-  }
-
-  if (status === 'error') {
-    return (
-      <Alert severity="error">
-        Unable to load scheduled posts. Please try again.
-      </Alert>
-    )
-  }
-
-  if (data.length === 0) {
-    return <Alert severity="info">No scheduled posts yet.</Alert>
-  }
-
-  return (
-    <>
       <TableContainer>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>Caption</TableCell>
@@ -125,7 +138,9 @@ export function ScheduledPostsTable({
                   <TableCell>
                     <Chip
                       size="small"
-                      label={postStatus === 'scheduled' ? 'Scheduled' : 'Failed'}
+                      label={
+                        postStatus === 'scheduled' ? 'Scheduled' : 'Failed'
+                      }
                       color={postStatus === 'scheduled' ? 'info' : 'error'}
                       variant="outlined"
                     />
@@ -136,6 +151,13 @@ export function ScheduledPostsTable({
                       spacing={1}
                       justifyContent="flex-end"
                     >
+                      <Button
+                        size="small"
+                        disabled={isUpdating || postStatus !== 'scheduled'}
+                        onClick={() => onEdit?.(id)}
+                      >
+                        Edit
+                      </Button>
                       <Button
                         size="small"
                         disabled={isUpdating || postStatus !== 'scheduled'}
@@ -162,35 +184,49 @@ export function ScheduledPostsTable({
           </TableBody>
         </Table>
       </TableContainer>
+    )
+  }
+
+  const closeRescheduleDialog = () => setReschedulePostId(null)
+
+  const handleConfirmReschedule = () => {
+    if (reschedulePostId !== null && rescheduleAt) {
+      onReschedule?.(reschedulePostId, rescheduleAt.toISOString())
+      closeRescheduleDialog()
+    }
+  }
+
+  return (
+    <>
+      {renderContent()}
 
       <Dialog
         open={reschedulePostId !== null}
-        onClose={() => setReschedulePostId(null)}
+        onClose={closeRescheduleDialog}
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>Reschedule post</DialogTitle>
+        <FormDialogTitle
+          title="Reschedule post"
+          subtitle="Choose a new publish time."
+          onClose={closeRescheduleDialog}
+        />
         <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <DateTimePicker
-              label="New schedule time"
-              value={rescheduleAt}
-              onChange={setRescheduleAt}
-              slotProps={{ textField: { fullWidth: true } }}
-            />
-          </Box>
+          <DateTimePicker
+            label="New schedule time"
+            value={rescheduleAt}
+            onChange={setRescheduleAt}
+            slotProps={{ textField: { fullWidth: true } }}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReschedulePostId(null)}>Close</Button>
+          <Button variant="outlined" onClick={closeRescheduleDialog}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
             disabled={!rescheduleAt || isUpdating}
-            onClick={() => {
-              if (reschedulePostId !== null && rescheduleAt) {
-                onReschedule?.(reschedulePostId, rescheduleAt.toISOString())
-                setReschedulePostId(null)
-              }
-            }}
+            onClick={handleConfirmReschedule}
           >
             Save
           </Button>

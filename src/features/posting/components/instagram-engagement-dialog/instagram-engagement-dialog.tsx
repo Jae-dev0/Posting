@@ -144,9 +144,7 @@ export function InstagramEngagementDialog({
                     <Typography variant="body2">{comment.text}</Typography>
                     {comment.timestamp ? (
                       <Typography variant="caption" color="text.secondary">
-                        {dayjs(comment.timestamp).format(
-                          'MMM D, YYYY h:mm A',
-                        )}
+                        {dayjs(comment.timestamp).format('MMM D, YYYY h:mm A')}
                       </Typography>
                     ) : null}
                   </Box>

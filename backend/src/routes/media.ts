@@ -7,18 +7,18 @@ import {
   savePublicMediaFile,
 } from '../lib/media-store.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
-import { facebookImageUpload } from '../middleware/facebook-image-upload.js'
+import { marketingMediaUpload } from '../middleware/facebook-image-upload.js'
 
 export const mediaRouter = Router()
 
 /**
  * Authenticated upload for draft/schedule media (returns a public media URL).
- * POST /api/media/upload  multipart field: `image`
+ * POST /api/media/upload  multipart field: `media`
  */
 mediaRouter.post(
   '/upload',
   requireAuth,
-  facebookImageUpload.single('image'),
+  marketingMediaUpload.single('media'),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       if (!req.user?.companyId) {
@@ -28,7 +28,11 @@ mediaRouter.post(
 
       const file = req.file
       if (!file) {
-        res.status(400).json({ message: 'Image file is required' })
+        res.status(400).json({ message: 'Image or MP4 video file is required' })
+        return
+      }
+      if (file.mimetype.startsWith('image/') && file.size > 10 * 1024 * 1024) {
+        res.status(413).json({ message: 'Images must be 10 MB or smaller' })
         return
       }
 
@@ -41,6 +45,7 @@ mediaRouter.post(
       res.status(201).json({
         filename,
         url: getPublicMediaUrl(filename),
+        type: file.mimetype.startsWith('video/') ? 'video' : 'image',
       })
     } catch (error) {
       next(error)

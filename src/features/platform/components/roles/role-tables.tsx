@@ -18,6 +18,8 @@ import { EmptyState } from '@/components/layout'
 import type { PlatformRole } from '@/features/platform/api'
 import type { Status } from '@/types'
 
+import { getRoleDisplayName } from './role-labels'
+
 export type RoleTablesProps = {
   data: PlatformRole[]
   status: Status
@@ -78,7 +80,7 @@ export function RoleTables({
         >
           <TableCell>
             <Typography variant="body2" fontWeight={600}>
-              {name}
+              {getRoleDisplayName(name)}
             </Typography>
           </TableCell>
           <TableCell>

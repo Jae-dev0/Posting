@@ -1,4 +1,10 @@
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationOptions,
+  type UseQueryOptions,
+} from '@tanstack/react-query'
 import { z } from 'zod'
 
 import { api } from '@/lib/api-client'
@@ -122,5 +128,47 @@ export const useListPlatformUsers = (
     ...options?.query,
     queryKey: platformKeys.users(filters),
     queryFn: ({ signal }) => usersQueryFn(filters, { signal }),
+  })
+}
+
+export const useUpdatePlatformUserStatus = (
+  options?: Omit<
+    UseMutationOptions<
+      PlatformUser,
+      Error,
+      { id: number; status: 'active' | 'disabled' }
+    >,
+    'mutationFn'
+  >,
+) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, status }) =>
+      platformUserSchema.parse(
+        (await api.patch(`/api/platform/users/${id}/status`, { status })).data,
+      ),
+    ...options,
+    onSuccess: (data, variables, context) => {
+      void queryClient.invalidateQueries({ queryKey: platformKeys.users() })
+      void queryClient.invalidateQueries({ queryKey: platformKeys.dashboard() })
+      options?.onSuccess?.(data, variables, context)
+    },
+  })
+}
+
+export const useDeletePlatformUser = (
+  options?: Omit<UseMutationOptions<void, Error, number>, 'mutationFn'>,
+) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/api/platform/users/${id}`)
+    },
+    ...options,
+    onSuccess: (data, variables, context) => {
+      void queryClient.invalidateQueries({ queryKey: platformKeys.users() })
+      void queryClient.invalidateQueries({ queryKey: platformKeys.dashboard() })
+      options?.onSuccess?.(data, variables, context)
+    },
   })
 }

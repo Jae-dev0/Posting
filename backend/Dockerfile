@@ -2,8 +2,11 @@ FROM node:22-bookworm AS base
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --ignore-scripts --no-audit --no-fund \
+      --maxsockets=4 --fetch-retries=5 --fetch-retry-mintimeout=1000 \
+      --loglevel=warn
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules

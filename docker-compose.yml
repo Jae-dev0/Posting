@@ -38,6 +38,10 @@ services:
       META_OAUTH_SCOPES: ${META_OAUTH_SCOPES:-public_profile,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content}
       META_INSTAGRAM_OAUTH_SCOPES: ${META_INSTAGRAM_OAUTH_SCOPES:-instagram_basic,instagram_content_publish,instagram_manage_comments,pages_show_list,pages_read_engagement,business_management,public_profile}
       PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-}
+      TIKTOK_CLIENT_KEY: ${TIKTOK_CLIENT_KEY:-}
+      TIKTOK_CLIENT_SECRET: ${TIKTOK_CLIENT_SECRET:-}
+      TIKTOK_REDIRECT_URI: ${TIKTOK_REDIRECT_URI:-https://localhost:3001/api/social/tiktok/callback}
+      TIKTOK_OAUTH_SCOPES: ${TIKTOK_OAUTH_SCOPES:-user.info.basic,video.publish}
       SEED_DATABASE: ${SEED_DATABASE:-true}
     volumes:
       - posting_uploads:/app/uploads

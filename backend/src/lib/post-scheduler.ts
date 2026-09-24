@@ -4,11 +4,18 @@ import {
   createInstagramImageContainer,
   publishInstagramContainer,
   publishPageFeedPost,
+  publishPageMultiPhotoPost,
   publishPagePhotoPost,
+  publishPageVideoPost,
   waitForInstagramContainer,
 } from './meta-graph.js'
 import { prisma } from './prisma.js'
-import { decryptSecret } from './token-crypto.js'
+import {
+  fetchTikTokCreatorInfo,
+  publishTikTokVideo,
+  refreshTikTokToken,
+} from './tiktok-api.js'
+import { decryptSecret, encryptSecret } from './token-crypto.js'
 import { writeAuditLog } from './audit.js'
 
 type DuePost = {
@@ -17,6 +24,8 @@ type DuePost = {
   createdById: number | null
   caption: string
   mediaUrl: string | null
+  mediaType?: 'image' | 'video' | null
+  media: Array<{ url: string; type: 'image' | 'video'; position: number }>
   accounts: Array<{
     accountId: number
     account: {
@@ -27,6 +36,8 @@ type DuePost = {
         pageId: string
         pageName: string
         accessTokenEnc: string
+        refreshTokenEnc: string | null
+        tokenExpiresAt: Date | null
         isConnected: boolean
         platform: SocialPlatform
       } | null
@@ -40,10 +51,49 @@ async function publishToSocialAccount(input: {
   accessToken: string
   caption: string
   mediaUrl: string | null
+  mediaType?: 'image' | 'video' | null
+  media?: Array<{ url: string; type: 'image' | 'video' }>
 }) {
-  const { platform, pageId, accessToken, caption, mediaUrl } = input
+  const {
+    platform,
+    pageId,
+    accessToken,
+    caption,
+    mediaUrl,
+    mediaType,
+    media = [],
+  } = input
 
   if (platform === SocialPlatform.facebook) {
+    if (media.length > 1) {
+      const photos = await Promise.all(
+        media.map((item) =>
+          publishPagePhotoPost({
+            pageId,
+            pageAccessToken: accessToken,
+            message: '',
+            imageUrl: item.url,
+            published: false,
+          }),
+        ),
+      )
+      const gallery = await publishPageMultiPhotoPost({
+        pageId,
+        pageAccessToken: accessToken,
+        message: caption,
+        photoIds: photos.map((photo) => photo.id),
+      })
+      return gallery.id
+    }
+    if (mediaUrl && mediaType === 'video') {
+      const video = await publishPageVideoPost({
+        pageId,
+        pageAccessToken: accessToken,
+        message: caption,
+        videoUrl: mediaUrl,
+      })
+      return video.id
+    }
     if (mediaUrl) {
       const photo = await publishPagePhotoPost({
         pageId,
@@ -63,6 +113,11 @@ async function publishToSocialAccount(input: {
   }
 
   if (platform === SocialPlatform.instagram) {
+    if (mediaType === 'video') {
+      throw new Error(
+        'Instagram scheduled video publishing is not configured for this account',
+      )
+    }
     if (!mediaUrl) {
       throw new Error('Instagram scheduled posts require an image URL')
     }
@@ -87,6 +142,21 @@ async function publishToSocialAccount(input: {
     return published.id
   }
 
+  if (platform === SocialPlatform.tiktok) {
+    if (!mediaUrl || mediaType !== 'video') {
+      throw new Error('TikTok scheduled posts require one public video URL')
+    }
+    const creator = await fetchTikTokCreatorInfo(accessToken)
+    if (!creator.privacy_level_options.includes('SELF_ONLY')) {
+      throw new Error('TikTok account does not allow private Direct Posts')
+    }
+    return publishTikTokVideo({
+      accessToken,
+      title: caption,
+      videoUrl: mediaUrl,
+    })
+  }
+
   throw new Error(`Unsupported platform for scheduled publish: ${platform}`)
 }
 
@@ -102,13 +172,36 @@ async function processDuePost(post: DuePost) {
     }
 
     try {
-      const accessToken = decryptSecret(social.accessTokenEnc)
+      let accessToken = decryptSecret(social.accessTokenEnc)
+      if (
+        social.platform === SocialPlatform.tiktok &&
+        (!social.tokenExpiresAt ||
+          social.tokenExpiresAt.getTime() <= Date.now() + 60_000)
+      ) {
+        if (!social.refreshTokenEnc) {
+          throw new Error('TikTok account must be reconnected')
+        }
+        const token = await refreshTikTokToken(
+          decryptSecret(social.refreshTokenEnc),
+        )
+        accessToken = token.access_token
+        await prisma.socialAccount.update({
+          where: { id: social.id },
+          data: {
+            accessTokenEnc: encryptSecret(token.access_token),
+            refreshTokenEnc: encryptSecret(token.refresh_token),
+            tokenExpiresAt: new Date(Date.now() + token.expires_in * 1000),
+          },
+        })
+      }
       lastExternalId = await publishToSocialAccount({
         platform: social.platform,
         pageId: social.pageId,
         accessToken,
         caption: post.caption,
         mediaUrl: post.mediaUrl,
+        mediaType: post.mediaType,
+        media: post.media,
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Publish failed'
@@ -166,6 +259,7 @@ export async function processDueScheduledPosts() {
       scheduledAt: { lte: now },
     },
     include: {
+      media: { orderBy: { position: 'asc' } },
       accounts: {
         include: {
           account: {

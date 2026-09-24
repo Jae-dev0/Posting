@@ -26,6 +26,7 @@ import {
   useHomeDepartment,
 } from '@/lib/auth'
 
+import { Login } from './routes/auth'
 import {
   CmsDashboardPage,
   CmsMediaPage,
@@ -34,17 +35,18 @@ import {
   CmsSettingsPage,
   CmsUsersPage,
 } from './routes/cms'
-import { Login } from './routes/auth'
 import { Dashboard } from './routes/dashboard'
 import {
   PlatformAuditPage,
   PlatformCompaniesPage,
   PlatformDashboardPage,
+  PlatformMediaPage,
   PlatformPermissionGroupsPage,
-  PlatformPlaceholderPage,
   PlatformRolesListPage,
   PlatformRolesPage,
+  PlatformSettingsPage,
   PlatformUsersPage,
+  PlatformWebsitesPage,
 } from './routes/platform'
 import {
   ConnectedAccountsPage,
@@ -182,10 +184,7 @@ const protectedRoutes = createBrowserRouter([
             path: 'websites',
             element: (
               <RequirePermission permission={PERMISSIONS.COMPANY_VIEW}>
-                <PlatformPlaceholderPage
-                  title="Websites"
-                  description="Primary websites are created with each company. Manage page content in Company CMS."
-                />
+                <PlatformWebsitesPage />
               </RequirePermission>
             ),
           },
@@ -208,10 +207,7 @@ const protectedRoutes = createBrowserRouter([
               {
                 index: true,
                 element: (
-                  <Navigate
-                    to={paths.platform.roles.roles.getHref()}
-                    replace
-                  />
+                  <Navigate to={paths.platform.roles.roles.getHref()} replace />
                 ),
               },
               {
@@ -228,10 +224,7 @@ const protectedRoutes = createBrowserRouter([
             path: 'media',
             element: (
               <RequirePermission permission={PERMISSIONS.CMS_VIEW}>
-                <PlatformPlaceholderPage
-                  title="Media"
-                  description="Company media is tenant-isolated under Company CMS → Media."
-                />
+                <PlatformMediaPage />
               </RequirePermission>
             ),
           },
@@ -247,10 +240,7 @@ const protectedRoutes = createBrowserRouter([
             path: 'settings',
             element: (
               <RequirePermission permission={PERMISSIONS.SETTINGS_VIEW}>
-                <PlatformPlaceholderPage
-                  title="System Settings"
-                  description="Platform system settings will expand here. RBAC catalog is managed under Roles & Permissions."
-                />
+                <PlatformSettingsPage />
               </RequirePermission>
             ),
           },

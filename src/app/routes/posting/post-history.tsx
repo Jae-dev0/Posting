@@ -1,7 +1,10 @@
-import { Card, CardContent, Typography } from '@mui/material'
 import { useMemo, useState } from 'react'
 
-import { ContentLayout } from '@/components/layout'
+import {
+  EntityListPage,
+  ListPageShowingCount,
+  PagedTableCard,
+} from '@/components/layout'
 import {
   FacebookEngagementDialog,
   InstagramEngagementDialog,
@@ -11,6 +14,7 @@ import {
   type PublishedPost,
   type SocialPlatform,
 } from '@/features/posting'
+import { paginate } from '@/utils'
 
 export function PostHistoryPage() {
   const facebookQuery = useFacebookPosts()
@@ -66,7 +70,8 @@ export function PostHistoryPage() {
         const parsed = new URL(url)
         // Old publishes stored API-port URLs; serve via same-origin nginx proxy.
         if (
-          (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') &&
+          (parsed.hostname === 'localhost' ||
+            parsed.hostname === '127.0.0.1') &&
           parsed.pathname.startsWith('/api/media/')
         ) {
           return parsed.pathname
@@ -123,7 +128,22 @@ export function PostHistoryPage() {
         canFetchFacebookEngagement: facebookEngagementIds.has(post.id),
         canFetchInstagramEngagement: instagramEngagementIds.has(post.id),
       }))
-  }, [facebookEngagementIds, facebookQuery.data, instagramEngagementIds, instagramQuery.data])
+  }, [
+    facebookEngagementIds,
+    facebookQuery.data,
+    instagramEngagementIds,
+    instagramQuery.data,
+  ])
+
+  const facebookError =
+    facebookQuery.error instanceof Error
+      ? facebookQuery.error.message
+      : undefined
+  const instagramError =
+    instagramQuery.error instanceof Error
+      ? instagramQuery.error.message
+      : undefined
+  const historyError = facebookError ?? instagramError
 
   const status =
     facebookQuery.status === 'pending' || instagramQuery.status === 'pending'
@@ -132,40 +152,64 @@ export function PostHistoryPage() {
         ? 'error'
         : 'success'
 
-  return (
-    <ContentLayout title="Post History">
-      <Card
-        elevation={0}
-        sx={{ m: 3, border: '1px solid', borderColor: 'divider' }}
-      >
-        <CardContent>
-          <Typography variant="h5" fontWeight={700} gutterBottom>
-            Post History
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Browse what you published (thumbnail + caption). Open Reactions to
-            load live Facebook reactions or Instagram likes from Meta.
-          </Typography>
+  const [pagination, setPagination] = useState({ page: 1, perPage: 10 })
+  const { data, total, currentPage } = paginate(
+    publishedPosts,
+    pagination.page,
+    pagination.perPage,
+  )
 
+  const handleCloseFacebookEngagement = () => setFacebookEngagementPostId(null)
+  const handleCloseInstagramEngagement = () =>
+    setInstagramEngagementPostId(null)
+
+  return (
+    <EntityListPage
+      layoutTitle="Post History"
+      toolbarTitle="Post History"
+      toolbarDescription={
+        <ListPageShowingCount count={status === 'success' ? total : 0}>
+          published posts with live engagement.
+        </ListPageShowingCount>
+      }
+      pagedTable={
+        <PagedTableCard
+          count={status === 'success' ? total : 0}
+          page={currentPage - 1}
+          rowsPerPage={pagination.perPage}
+          onPageChange={(_, page) =>
+            setPagination((prev) => ({ ...prev, page: page + 1 }))
+          }
+          onRowsPerPageChange={(event) => {
+            setPagination({
+              page: 1,
+              perPage: parseInt(event.target.value, 10),
+            })
+          }}
+        >
           <PostHistoryTable
-            data={publishedPosts}
+            data={status === 'success' ? data : []}
             status={status}
+            errorMessage={historyError}
             onViewFacebookEngagement={setFacebookEngagementPostId}
             onViewInstagramEngagement={setInstagramEngagementPostId}
           />
-        </CardContent>
-      </Card>
-
-      <FacebookEngagementDialog
-        open={facebookEngagementPostId !== null}
-        postId={facebookEngagementPostId}
-        onClose={() => setFacebookEngagementPostId(null)}
-      />
-      <InstagramEngagementDialog
-        open={instagramEngagementPostId !== null}
-        postId={instagramEngagementPostId}
-        onClose={() => setInstagramEngagementPostId(null)}
-      />
-    </ContentLayout>
+        </PagedTableCard>
+      }
+      footer={
+        <>
+          <FacebookEngagementDialog
+            open={facebookEngagementPostId !== null}
+            postId={facebookEngagementPostId}
+            onClose={handleCloseFacebookEngagement}
+          />
+          <InstagramEngagementDialog
+            open={instagramEngagementPostId !== null}
+            postId={instagramEngagementPostId}
+            onClose={handleCloseInstagramEngagement}
+          />
+        </>
+      }
+    />
   )
 }

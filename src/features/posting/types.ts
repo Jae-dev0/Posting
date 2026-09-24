@@ -42,7 +42,6 @@ export type PublishedPost = {
   canFetchInstagramEngagement?: boolean
 }
 
-
 export type ScheduledPost = {
   id: number
   caption: string

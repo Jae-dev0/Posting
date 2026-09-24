@@ -1,15 +1,12 @@
 import {
   Alert,
-  Box,
   Button,
-  Card,
-  CardContent,
   Chip,
-  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
   Select,
+  Skeleton,
   Stack,
   Switch,
   Table,
@@ -20,16 +17,16 @@ import {
   TableRow,
   Typography,
 } from '@mui/material'
-import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 
-import { ContentLayout } from '@/components/layout'
+import { ContentLayout, EmptyState } from '@/components/layout'
 import {
   useTeamOverview,
   useUpdatePost,
   useUpsertPermission,
 } from '@/features/posting'
 import { useSnackbar } from '@/lib/mui/snackbar-hooks'
+import { formatDate } from '@/utils'
 
 export function TeamPermissionsPage() {
   const { showSuccess, showError } = useSnackbar()
@@ -55,6 +52,7 @@ export function TeamPermissionsPage() {
   })
 
   const overview = overviewQuery.data
+  const { status, error } = overviewQuery
 
   const selectedPermission = useMemo(() => {
     if (!overview || selectedUserId === '' || selectedAccountId === '') {
@@ -69,221 +67,239 @@ export function TeamPermissionsPage() {
     )
   }, [overview, selectedAccountId, selectedUserId])
 
-  if (overviewQuery.status === 'pending') {
+  const renderContent = () => {
+    if (status === 'pending') {
+      return (
+        <Stack spacing={1}>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} height={36} />
+          ))}
+        </Stack>
+      )
+    }
+
+    if (status === 'error' || !overview) {
+      return (
+        <Alert severity="error">
+          {error instanceof Error
+            ? error.message
+            : 'Unable to load team data. Main admin access is required.'}
+        </Alert>
+      )
+    }
+
+    return null
+  }
+
+  const renderFilters = () => {
+    if (status !== 'success' || !overview) return null
+
+    const { users, accounts } = overview
+
     return (
-      <ContentLayout title="Team & Permissions">
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-          <CircularProgress />
-        </Box>
-      </ContentLayout>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        alignItems={{ md: 'center' }}
+        sx={{ mb: 2 }}
+      >
+        <FormControl sx={{ minWidth: 220 }} size="small">
+          <InputLabel id="team-user-label">User</InputLabel>
+          <Select
+            labelId="team-user-label"
+            label="User"
+            value={selectedUserId}
+            onChange={(event) =>
+              setSelectedUserId(event.target.value as number | '')
+            }
+          >
+            {users.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.name} ({user.role})
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 220 }} size="small">
+          <InputLabel id="team-account-label">Account</InputLabel>
+          <Select
+            labelId="team-account-label"
+            label="Account"
+            value={selectedAccountId}
+            onChange={(event) =>
+              setSelectedAccountId(event.target.value as number | '')
+            }
+          >
+            {accounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.platform} · {account.accountName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="body2">Can publish</Typography>
+          <Switch
+            checked={selectedPermission?.canPublish ?? true}
+            disabled={
+              selectedUserId === '' ||
+              selectedAccountId === '' ||
+              isSavingPermission
+            }
+            onChange={(_event, checked) => {
+              if (selectedUserId === '' || selectedAccountId === '') return
+              upsertPermission({
+                userId: selectedUserId,
+                connectedAccountId: selectedAccountId,
+                canPublish: checked,
+                canApprove: selectedPermission?.canApprove ?? false,
+              })
+            }}
+          />
+        </Stack>
+      </Stack>
     )
   }
 
-  if (overviewQuery.status === 'error' || !overview) {
+  const renderPendingApprovals = () => {
+    if (status !== 'success' || !overview) return null
+
+    const { pendingApprovals } = overview
+
     return (
-      <ContentLayout title="Team & Permissions">
-        <Alert severity="error" sx={{ m: 3 }}>
-          Unable to load team data. Main admin access is required.
-        </Alert>
-      </ContentLayout>
+      <Stack spacing={2} sx={{ mt: 2 }}>
+        <Typography variant="h6" fontWeight={700}>
+          Pending approvals
+        </Typography>
+        {pendingApprovals.length === 0 ? (
+          <EmptyState
+            title="No posts waiting for approval"
+            description="Posts that need review will appear here."
+          />
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Caption</TableCell>
+                  <TableCell>Author</TableCell>
+                  <TableCell>Updated</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {overview.pendingApprovals.map((post) => {
+                  const { id, caption, createdBy, updatedAt } = post
+                  return (
+                    <TableRow key={id}>
+                      <TableCell sx={{ maxWidth: 280 }}>
+                        <Typography variant="body2" noWrap>
+                          {caption}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{createdBy?.name ?? '—'}</TableCell>
+                      <TableCell>{formatDate(updatedAt)}</TableCell>
+                      <TableCell align="right">
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          justifyContent="flex-end"
+                        >
+                          <Button
+                            size="small"
+                            disabled={isUpdatingPost}
+                            onClick={() =>
+                              updatePost({
+                                postId: id,
+                                action: 'approve',
+                              })
+                            }
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="small"
+                            color="warning"
+                            disabled={isUpdatingPost}
+                            onClick={() =>
+                              updatePost({
+                                postId: id,
+                                action: 'reject_to_draft',
+                              })
+                            }
+                          >
+                            Reject
+                          </Button>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Stack>
+    )
+  }
+
+  const renderAuditLog = () => {
+    if (status !== 'success' || !overview) return null
+
+    const { auditLog } = overview
+
+    return (
+      <Stack spacing={2} sx={{ mt: 2 }}>
+        <Typography variant="h6" fontWeight={700}>
+          Audit log
+        </Typography>
+        {auditLog.length === 0 ? (
+          <EmptyState
+            title="No activity recorded yet"
+            description="Team actions will appear here as they happen."
+          />
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>When</TableCell>
+                  <TableCell>User</TableCell>
+                  <TableCell>Action</TableCell>
+                  <TableCell>Summary</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {auditLog.map((entry) => {
+                  const { id, createdAt, user, action, summary } = entry
+                  return (
+                    <TableRow key={id}>
+                      <TableCell>{formatDate(createdAt)}</TableCell>
+                      <TableCell>{user?.name ?? 'System'}</TableCell>
+                      <TableCell>
+                        <Chip size="small" label={action} />
+                      </TableCell>
+                      <TableCell>{summary}</TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Stack>
     )
   }
 
   return (
     <ContentLayout title="Team & Permissions">
-      <Stack spacing={3} sx={{ m: 3 }}>
-        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-          <CardContent>
-            <Typography variant="h5" fontWeight={700} gutterBottom>
-              Team & Permissions
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Control who can publish to each connected account, review pending
-              approvals, and audit activity.
-            </Typography>
-
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              spacing={2}
-              alignItems={{ md: 'center' }}
-              sx={{ mb: 2 }}
-            >
-              <FormControl sx={{ minWidth: 220 }} size="small">
-                <InputLabel id="team-user-label">User</InputLabel>
-                <Select
-                  labelId="team-user-label"
-                  label="User"
-                  value={selectedUserId}
-                  onChange={(event) =>
-                    setSelectedUserId(event.target.value as number | '')
-                  }
-                >
-                  {overview.users.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
-                      {user.name} ({user.role})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl sx={{ minWidth: 220 }} size="small">
-                <InputLabel id="team-account-label">Account</InputLabel>
-                <Select
-                  labelId="team-account-label"
-                  label="Account"
-                  value={selectedAccountId}
-                  onChange={(event) =>
-                    setSelectedAccountId(event.target.value as number | '')
-                  }
-                >
-                  {overview.accounts.map((account) => (
-                    <MenuItem key={account.id} value={account.id}>
-                      {account.platform} · {account.accountName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2">Can publish</Typography>
-                <Switch
-                  checked={selectedPermission?.canPublish ?? true}
-                  disabled={
-                    selectedUserId === '' ||
-                    selectedAccountId === '' ||
-                    isSavingPermission
-                  }
-                  onChange={(_event, checked) => {
-                    if (selectedUserId === '' || selectedAccountId === '') return
-                    upsertPermission({
-                      userId: selectedUserId,
-                      connectedAccountId: selectedAccountId,
-                      canPublish: checked,
-                      canApprove: selectedPermission?.canApprove ?? false,
-                    })
-                  }}
-                />
-              </Stack>
-            </Stack>
-
-            {overview.accounts.length === 0 ? (
-              <Alert severity="info">
-                Connect Facebook or Instagram accounts first to assign
-                permissions.
-              </Alert>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Pending approvals
-            </Typography>
-            {overview.pendingApprovals.length === 0 ? (
-              <Alert severity="info">No posts waiting for approval.</Alert>
-            ) : (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Caption</TableCell>
-                      <TableCell>Author</TableCell>
-                      <TableCell>Updated</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {overview.pendingApprovals.map((post) => (
-                      <TableRow key={post.id}>
-                        <TableCell sx={{ maxWidth: 280 }}>
-                          <Typography variant="body2" noWrap>
-                            {post.caption}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{post.createdBy?.name ?? '—'}</TableCell>
-                        <TableCell>
-                          {dayjs(post.updatedAt).format('MMM D, h:mm A')}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            justifyContent="flex-end"
-                          >
-                            <Button
-                              size="small"
-                              disabled={isUpdatingPost}
-                              onClick={() =>
-                                updatePost({
-                                  postId: post.id,
-                                  action: 'approve',
-                                })
-                              }
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              size="small"
-                              color="warning"
-                              disabled={isUpdatingPost}
-                              onClick={() =>
-                                updatePost({
-                                  postId: post.id,
-                                  action: 'reject_to_draft',
-                                })
-                              }
-                            >
-                              Reject
-                            </Button>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Audit log
-            </Typography>
-            {overview.auditLog.length === 0 ? (
-              <Alert severity="info">No activity recorded yet.</Alert>
-            ) : (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>When</TableCell>
-                      <TableCell>User</TableCell>
-                      <TableCell>Action</TableCell>
-                      <TableCell>Summary</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {overview.auditLog.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>
-                          {dayjs(entry.createdAt).format('MMM D, h:mm A')}
-                        </TableCell>
-                        <TableCell>{entry.user?.name ?? 'System'}</TableCell>
-                        <TableCell>
-                          <Chip size="small" label={entry.action} />
-                        </TableCell>
-                        <TableCell>{entry.summary}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
+      <Stack spacing={2}>
+        {renderContent()}
+        {renderFilters()}
+        {renderPendingApprovals()}
+        {renderAuditLog()}
       </Stack>
     </ContentLayout>
   )

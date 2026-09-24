@@ -21,7 +21,10 @@ export const platformDashboardSchema = z.object({
       entityId: z.number().nullable().optional(),
       summary: z.string(),
       createdAt: z.string(),
-      company: z.object({ id: z.number(), name: z.string() }).nullable().optional(),
+      company: z
+        .object({ id: z.number(), name: z.string() })
+        .nullable()
+        .optional(),
       user: z
         .object({ id: z.number(), name: z.string(), email: z.string() })
         .nullable()

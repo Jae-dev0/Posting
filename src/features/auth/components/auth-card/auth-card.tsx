@@ -80,7 +80,10 @@ export function AuthCard({
           <Stack
             spacing={0.5}
             alignItems="center"
-            sx={{ mb: hasHeader ? SPACING_TITLE_BOTTOM : 0, textAlign: 'center' }}
+            sx={{
+              mb: hasHeader ? SPACING_TITLE_BOTTOM : 0,
+              textAlign: 'center',
+            }}
           >
             {title ? (
               <Typography variant="h5" fontWeight={700} color="text.primary">
@@ -88,7 +91,11 @@ export function AuthCard({
               </Typography>
             ) : null}
             {subtitle ? (
-              <Typography variant="body2" fontWeight={500} color="text.secondary">
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                color="text.secondary"
+              >
                 {subtitle}
               </Typography>
             ) : null}
@@ -108,7 +115,3 @@ export function AuthCard({
     </>
   )
 }
-
-
-
-

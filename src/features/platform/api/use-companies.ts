@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient, type UseMutationOptions, type UseQueryOptions } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationOptions,
+  type UseQueryOptions,
+} from '@tanstack/react-query'
 import { z } from 'zod'
 
 import { api } from '@/lib/api-client'
@@ -66,7 +72,10 @@ export type CreateCompanyInput = {
 }
 
 export const useCreateCompany = (
-  options?: Omit<UseMutationOptions<Company, Error, CreateCompanyInput>, 'mutationFn'>,
+  options?: Omit<
+    UseMutationOptions<Company, Error, CreateCompanyInput>,
+    'mutationFn'
+  >,
 ) => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -93,7 +102,10 @@ export type UpdateCompanyInput = {
 }
 
 export const useUpdateCompany = (
-  options?: Omit<UseMutationOptions<Company, Error, UpdateCompanyInput>, 'mutationFn'>,
+  options?: Omit<
+    UseMutationOptions<Company, Error, UpdateCompanyInput>,
+    'mutationFn'
+  >,
 ) => {
   const queryClient = useQueryClient()
   return useMutation({

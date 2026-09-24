@@ -1,61 +1,21 @@
-import { Button, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material'
+import {
+  Button,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from '@mui/material'
 import { useId, useState } from 'react'
-import type { IconType } from 'react-icons'
-import { LuBuilding2, LuChevronDown, LuGlobe, LuMegaphone } from 'react-icons/lu'
+import { LuChevronDown } from 'react-icons/lu'
 import { Link as RouterLink } from 'react-router'
 
-import { paths } from '@/config/paths'
 import type { AppDepartment } from '@/lib/auth'
 
-export type DepartmentTopNavItem = {
-  department: AppDepartment
-  label: string
-  href: string
-  icon: IconType
-}
+import type { DepartmentTopNavItem } from './build-department-top-nav-items'
 
 export type DepartmentTopNavProps = {
   items: DepartmentTopNavItem[]
   activeDepartment: AppDepartment
-}
-
-export function buildDepartmentTopNavItems(access: {
-  canAccessPlatform: boolean
-  canAccessCms: boolean
-  canAccessMarketing: boolean
-}): DepartmentTopNavItem[] {
-  return [
-    ...(access.canAccessPlatform
-      ? [
-          {
-            department: 'platform' as const,
-            label: 'Platform',
-            href: paths.platform.dashboard.getHref(),
-            icon: LuBuilding2,
-          },
-        ]
-      : []),
-    ...(access.canAccessCms
-      ? [
-          {
-            department: 'cms' as const,
-            label: 'CMS',
-            href: paths.cms.dashboard.getHref(),
-            icon: LuGlobe,
-          },
-        ]
-      : []),
-    ...(access.canAccessMarketing
-      ? [
-          {
-            department: 'marketing' as const,
-            label: 'Marketing',
-            href: paths.dashboard.getHref(),
-            icon: LuMegaphone,
-          },
-        ]
-      : []),
-  ]
 }
 
 export function DepartmentTopNav({

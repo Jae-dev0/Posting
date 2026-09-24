@@ -142,6 +142,20 @@ export async function publishPagePhotoPost(input: {
   return parseGraphResponse<{ id: string; post_id?: string }>(response)
 }
 
+export async function publishPageVideoPost(input: {
+  pageId: string
+  pageAccessToken: string
+  message: string
+  videoUrl: string
+}) {
+  const response = await fetch(`${graphBaseUrl()}/${input.pageId}/videos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_url: input.videoUrl, description: input.message, access_token: input.pageAccessToken }),
+  })
+  return parseGraphResponse<{ id: string }>(response)
+}
+
 export async function publishPagePhotoFromFile(input: {
   pageId: string
   pageAccessToken: string

@@ -17,59 +17,56 @@ import { AnalyticsPublishingTrend } from '@/features/posting/components/analytic
 import { AnalyticsStatCard } from '@/features/posting/components/analytics-stat-card'
 
 export function Dashboard() {
-  const query = useAnalyticsSummary()
+  const { status, error, data, refetch } = useAnalyticsSummary()
 
-  if (query.status === 'pending') {
-    return (
-      <ContentLayout title="Analytics">
-        <AnalyticsDashboardSkeleton />
-      </ContentLayout>
-    )
-  }
+  const renderContent = () => {
+    if (status === 'pending') {
+      return <AnalyticsDashboardSkeleton />
+    }
 
-  if (query.status === 'error' || !query.data) {
-    return (
-      <ContentLayout title="Analytics">
+    if (status === 'error' || !data) {
+      return (
         <Alert
           severity="error"
           action={
-            <Button
-              color="inherit"
-              size="small"
-              onClick={() => void query.refetch()}
-            >
+            <Button color="inherit" size="small" onClick={() => void refetch()}>
               Retry
             </Button>
           }
         >
-          Unable to load analytics. Please try again.
+          {error instanceof Error
+            ? error.message
+            : 'Unable to load analytics. Please try again.'}
         </Alert>
-      </ContentLayout>
+      )
+    }
+
+    const {
+      postsPublishedThisWeek,
+      postsPublishedThisMonth,
+      failedPublishCount,
+      scheduledCount,
+      draftCount,
+      pendingApprovalCount,
+      publishedWithEngagementAvailable,
+      publishingTrend = [],
+      accountHealth,
+      recentActivity,
+    } = data
+
+    const hasAccountIssues = accountHealth.some(
+      (account) =>
+        account.health === 'expired' ||
+        account.health === 'expiring_soon' ||
+        account.health === 'disconnected',
     )
-  }
+    const failedAccentColor = failedPublishCount > 0 ? '#D32F2F' : '#757575'
+    const failedSubtitle =
+      failedPublishCount > 0
+        ? 'Needs attention in History'
+        : 'All publishes succeeded'
 
-  const {
-    postsPublishedThisWeek,
-    postsPublishedThisMonth,
-    failedPublishCount,
-    scheduledCount,
-    draftCount,
-    pendingApprovalCount,
-    publishedWithEngagementAvailable,
-    publishingTrend = [],
-    accountHealth,
-    recentActivity,
-  } = query.data
-
-  const hasAccountIssues = accountHealth.some(
-    (account) =>
-      account.health === 'expired' ||
-      account.health === 'expiring_soon' ||
-      account.health === 'disconnected',
-  )
-
-  return (
-    <ContentLayout title="Analytics">
+    return (
       <Stack spacing={3}>
         <Box
           sx={{
@@ -115,12 +112,8 @@ export function Dashboard() {
               label="Failed publishes"
               value={failedPublishCount}
               icon={LuCircleAlert}
-              accentColor={failedPublishCount > 0 ? '#D32F2F' : '#757575'}
-              subtitle={
-                failedPublishCount > 0
-                  ? 'Needs attention in History'
-                  : 'All publishes succeeded'
-              }
+              accentColor={failedAccentColor}
+              subtitle={failedSubtitle}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -168,6 +161,8 @@ export function Dashboard() {
           </Grid>
         </Grid>
       </Stack>
-    </ContentLayout>
-  )
+    )
+  }
+
+  return <ContentLayout title="Analytics">{renderContent()}</ContentLayout>
 }

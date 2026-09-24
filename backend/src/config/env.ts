@@ -4,14 +4,20 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().min(1),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   JWT_SECRET: z.string().min(16).default('dev-only-change-me-in-production'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
   /** 64-char hex (32 bytes). Falls back to a key derived from JWT_SECRET in development. */
   TOKEN_ENCRYPTION_KEY: z.preprocess(
-    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
-    z.string().regex(/^[0-9a-fA-F]{64}$/).optional(),
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z
+      .string()
+      .regex(/^[0-9a-fA-F]{64}$/)
+      .optional(),
   ),
   META_APP_ID: z.string().optional().default(''),
   META_APP_SECRET: z.string().optional().default(''),
@@ -53,9 +59,18 @@ const EnvSchema = z.object({
    * Required for local file → Instagram publish. Falls back to http://localhost:PORT (Meta cannot reach localhost).
    */
   PUBLIC_API_BASE_URL: z.preprocess(
-    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
     z.string().url().optional(),
   ),
+  TIKTOK_CLIENT_KEY: z.string().optional().default(''),
+  TIKTOK_CLIENT_SECRET: z.string().optional().default(''),
+  TIKTOK_REDIRECT_URI: z
+    .string()
+    .url()
+    .optional()
+    .default('https://localhost:3001/api/social/tiktok/callback'),
+  TIKTOK_OAUTH_SCOPES: z.string().default('user.info.basic,video.publish'),
 })
 
 export const env = EnvSchema.parse(process.env)
@@ -85,4 +100,14 @@ export function getPublicApiBaseUrl() {
     /\/$/,
     '',
   )
+}
+
+export function isTikTokConfigured() {
+  return Boolean(env.TIKTOK_CLIENT_KEY && env.TIKTOK_CLIENT_SECRET)
+}
+
+export function getTikTokOAuthScopes() {
+  return env.TIKTOK_OAUTH_SCOPES.split(',')
+    .map((scope) => scope.trim())
+    .filter(Boolean)
 }

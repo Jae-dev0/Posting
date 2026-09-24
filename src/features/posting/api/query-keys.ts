@@ -14,6 +14,11 @@ export const instagramKeys = {
     [...instagramKeys.all, 'engagement', postId] as const,
 }
 
+export const tiktokKeys = {
+  all: ['tiktok'] as const,
+  accounts: () => [...tiktokKeys.all, 'accounts'] as const,
+}
+
 export const postKeys = {
   all: ['posts'] as const,
   lists: () => [...postKeys.all, 'list'] as const,
