@@ -1,6 +1,7 @@
 import { useContext } from 'react'
 
 import { AuthContext } from './context'
+<<<<<<< HEAD
 import {
   getHomeDepartment,
   getRoleLabel,
@@ -14,6 +15,8 @@ import {
   canAny,
   type PermissionLike,
 } from './permissions'
+=======
+>>>>>>> origin/main
 import type { AuthUser } from './types'
 
 export function useAuth() {
@@ -33,6 +36,7 @@ export function useAuthUser(): [AuthUser | null, ReturnType<typeof useAuth>] {
 
 export function useCanManageAccounts() {
   const { user } = useAuth()
+<<<<<<< HEAD
   // Super Admin or Marketing Admin (account management)
   return Boolean(
     user?.isSuperAdmin ||
@@ -96,4 +100,7 @@ export function useCan(permission: PermissionLike | PermissionLike[]) {
 export function useCanAccessCompany(companyId: number) {
   const { user } = useAuth()
   return canAccessCompany(user, companyId)
+=======
+  return user?.role === 'main_admin'
+>>>>>>> origin/main
 }

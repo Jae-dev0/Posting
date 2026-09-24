@@ -1,7 +1,10 @@
 import { SocialPlatform } from '@prisma/client'
 import { Router, type Response } from 'express'
+<<<<<<< HEAD
 import { readFile } from 'fs/promises'
 import path from 'path'
+=======
+>>>>>>> origin/main
 
 import {
   env,
@@ -13,7 +16,10 @@ import { mapAccount } from '../lib/mappers.js'
 import {
   getPublicMediaUrl,
   isPubliclyReachableUrl,
+<<<<<<< HEAD
   resolveMediaPath,
+=======
+>>>>>>> origin/main
   savePublicMediaFile,
 } from '../lib/media-store.js'
 import {
@@ -21,8 +27,11 @@ import {
   createInstagramCarouselContainer,
   createInstagramImageContainer,
   fetchInstagramMediaEngagement,
+<<<<<<< HEAD
   fetchPageIdentity,
   hostImageOnMetaCdn,
+=======
+>>>>>>> origin/main
   MetaGraphError,
   publishInstagramContainer,
   waitForInstagramContainer,
@@ -227,6 +236,7 @@ instagramSocialRouter.post(
         return
       }
 
+<<<<<<< HEAD
       const imageUrls: string[] = []
 
       let facebookPageId: string
@@ -323,6 +333,16 @@ instagramSocialRouter.post(
           return
         }
         throw error
+=======
+      const imageUrls: string[] = [...imageUrlsFromBody]
+      for (const file of uploadedImages) {
+        const filename = await savePublicMediaFile({
+          buffer: file.buffer,
+          mimetype: file.mimetype,
+          originalname: file.originalname,
+        })
+        imageUrls.push(getPublicMediaUrl(filename))
+>>>>>>> origin/main
       }
 
       if (imageUrls.length === 0) {
@@ -333,6 +353,19 @@ instagramSocialRouter.post(
         return
       }
 
+<<<<<<< HEAD
+=======
+      for (const imageUrl of imageUrls) {
+        if (!isPubliclyReachableUrl(imageUrl)) {
+          res.status(400).json({
+            message:
+              'Instagram needs publicly reachable image URLs (Meta cannot fetch localhost). Set PUBLIC_API_BASE_URL to an https tunnel (e.g. ngrok) pointing at this API, or paste public https image URLs.',
+          })
+          return
+        }
+      }
+
+>>>>>>> origin/main
       let externalPostId: string
       try {
         if (imageUrls.length === 1) {
@@ -601,15 +634,20 @@ instagramSocialRouter.get(
           .find(
             (account) =>
               account?.platform === PLATFORM_INSTAGRAM && account.isConnected,
+<<<<<<< HEAD
           ) ?? null
 
       const fallbackSocialAccount =
         socialAccount ??
+=======
+          ) ??
+>>>>>>> origin/main
         (await prisma.socialAccount.findFirst({
           where: {
             companyId: user.companyId,
             platform: PLATFORM_INSTAGRAM,
             isConnected: true,
+<<<<<<< HEAD
             ...(post.accounts.length > 0
               ? {
                   connectedAccountId: {
@@ -621,6 +659,12 @@ instagramSocialRouter.get(
         }))
 
       if (!fallbackSocialAccount) {
+=======
+          },
+        }))
+
+      if (!socialAccount) {
+>>>>>>> origin/main
         res.status(404).json({
           message: 'No connected Instagram account available for engagement',
         })
@@ -629,7 +673,11 @@ instagramSocialRouter.get(
 
       let pageAccessToken: string
       try {
+<<<<<<< HEAD
         pageAccessToken = decryptSecret(fallbackSocialAccount.accessTokenEnc)
+=======
+        pageAccessToken = decryptSecret(socialAccount.accessTokenEnc)
+>>>>>>> origin/main
       } catch {
         res.status(500).json({ message: 'Stored token could not be decrypted' })
         return
@@ -660,6 +708,7 @@ instagramSocialRouter.get(
         })
       } catch (error) {
         if (error instanceof MetaGraphError) {
+<<<<<<< HEAD
           const isAuthError = error.code === 190 || error.status === 401
           if (isAuthError) {
             await prisma.socialAccount.update({
@@ -687,6 +736,9 @@ instagramSocialRouter.get(
           res.status(502).json({
             message: error.message || 'Meta Graph API rejected the engagement request',
           })
+=======
+          res.status(502).json({ message: error.message })
+>>>>>>> origin/main
           return
         }
         throw error

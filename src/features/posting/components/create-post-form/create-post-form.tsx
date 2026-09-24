@@ -16,8 +16,11 @@ import dayjs, { Dayjs } from 'dayjs'
 import { ChangeEvent, DragEvent, useRef } from 'react'
 import {
   LuCalendar,
+<<<<<<< HEAD
   LuChevronLeft,
   LuChevronRight,
+=======
+>>>>>>> origin/main
   LuClock,
   LuImage,
   LuPlus,
@@ -41,11 +44,17 @@ import { PlatformAccountCard } from '../platform-account-card'
 export type CreatePostFormProps = {
   draft: PostDraft
   accounts: ConnectedAccount[]
+<<<<<<< HEAD
   isBusy?: boolean
   onCaptionChange: (caption: string) => void
   onAddMedia: (files: File[]) => void
   onRemoveMediaAt: (index: number) => void
   onMoveMedia: (index: number, direction: -1 | 1) => void
+=======
+  onCaptionChange: (caption: string) => void
+  onAddMedia: (files: File[]) => void
+  onRemoveMediaAt: (index: number) => void
+>>>>>>> origin/main
   onClearMedia: () => void
   onToggleAccount: (accountId: number, enabled: boolean) => void
   onPublishModeChange: (mode: PostDraft['publishMode']) => void
@@ -57,11 +66,17 @@ export type CreatePostFormProps = {
 export function CreatePostForm({
   draft,
   accounts,
+<<<<<<< HEAD
   isBusy = false,
   onCaptionChange,
   onAddMedia,
   onRemoveMediaAt,
   onMoveMedia,
+=======
+  onCaptionChange,
+  onAddMedia,
+  onRemoveMediaAt,
+>>>>>>> origin/main
   onClearMedia,
   onToggleAccount,
   onPublishModeChange,
@@ -69,6 +84,7 @@ export function CreatePostForm({
   onSaveDraft,
   onPublish,
 }: CreatePostFormProps) {
+<<<<<<< HEAD
   const {
     caption,
     mediaUrls,
@@ -77,6 +93,10 @@ export function CreatePostForm({
     scheduledAt,
     selectedAccountIds,
   } = draft
+=======
+  const { caption, mediaUrls, publishMode, scheduledAt, selectedAccountIds } =
+    draft
+>>>>>>> origin/main
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scheduledDate = scheduledAt
     ? dayjs(scheduledAt)
@@ -111,9 +131,13 @@ export function CreatePostForm({
                 1. Media
               </Typography>
               <Typography variant="caption" color="text.secondary">
+<<<<<<< HEAD
                 {mediaType === 'video'
                   ? '1 video'
                   : `${mediaUrls.length} / ${MEDIA_MAX_IMAGES} images`}
+=======
+                {mediaUrls.length} / {MEDIA_MAX_IMAGES} images
+>>>>>>> origin/main
               </Typography>
             </Stack>
 
@@ -141,6 +165,7 @@ export function CreatePostForm({
                         aspectRatio: '4 / 3',
                       }}
                     >
+<<<<<<< HEAD
                       {mediaType === 'video' ? (
                         <Box
                           component="video"
@@ -202,6 +227,22 @@ export function CreatePostForm({
                       <IconButton
                         size="small"
                         aria-label={`Remove ${mediaType === 'video' ? 'video' : `image ${index + 1}`}`}
+=======
+                      <Box
+                        component="img"
+                        src={url}
+                        alt={`Upload ${index + 1}`}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        aria-label={`Remove image ${index + 1}`}
+>>>>>>> origin/main
                         onClick={() => onRemoveMediaAt(index)}
                         sx={{
                           position: 'absolute',
@@ -216,11 +257,16 @@ export function CreatePostForm({
                       </IconButton>
                     </Box>
                   ))}
+<<<<<<< HEAD
                   {canAddMore && mediaType !== 'video' ? (
                     <Box
                       component="button"
                       type="button"
                       aria-label="Add more images"
+=======
+                  {canAddMore ? (
+                    <Box
+>>>>>>> origin/main
                       onClick={() => fileInputRef.current?.click()}
                       sx={{
                         border: '2px dashed',
@@ -231,7 +277,10 @@ export function CreatePostForm({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
+<<<<<<< HEAD
                         background: 'transparent',
+=======
+>>>>>>> origin/main
                         bgcolor: 'background.default',
                         '&:hover': { borderColor: 'primary.main' },
                       }}
@@ -441,7 +490,11 @@ export function CreatePostForm({
           </Box>
 
           <Stack direction="row" spacing={2} justifyContent="flex-end">
+<<<<<<< HEAD
             <Button variant="outlined" onClick={onSaveDraft} disabled={isBusy}>
+=======
+            <Button variant="outlined" onClick={onSaveDraft}>
+>>>>>>> origin/main
               Save Draft
             </Button>
             <Button
@@ -449,6 +502,7 @@ export function CreatePostForm({
               color="primary"
               startIcon={<LuSend size={16} />}
               onClick={onPublish}
+<<<<<<< HEAD
               disabled={isBusy || selectedCount === 0}
             >
               {isBusy
@@ -458,6 +512,13 @@ export function CreatePostForm({
                 : selectedCount > 1
                   ? `Publish to ${selectedCount} accounts`
                   : 'Publish Everywhere'}
+=======
+              disabled={selectedCount === 0}
+            >
+              {selectedCount > 1
+                ? `Publish to ${selectedCount} accounts`
+                : 'Publish Everywhere'}
+>>>>>>> origin/main
             </Button>
           </Stack>
         </Stack>

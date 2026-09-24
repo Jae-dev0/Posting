@@ -11,7 +11,10 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+<<<<<<< HEAD
 import { isAxiosError } from 'axios'
+=======
+>>>>>>> origin/main
 import dayjs from 'dayjs'
 
 import { useInstagramPostEngagement } from '../../api'
@@ -22,6 +25,7 @@ export type InstagramEngagementDialogProps = {
   onClose: () => void
 }
 
+<<<<<<< HEAD
 function getEngagementErrorMessage(error: unknown) {
   if (isAxiosError(error)) {
     const data: unknown = error.response?.data
@@ -42,6 +46,8 @@ function getEngagementErrorMessage(error: unknown) {
   return 'Unable to load engagement from Meta Graph API.'
 }
 
+=======
+>>>>>>> origin/main
 export function InstagramEngagementDialog({
   open,
   postId,
@@ -73,7 +79,13 @@ export function InstagramEngagementDialog({
               </Button>
             }
           >
+<<<<<<< HEAD
             {getEngagementErrorMessage(error)}
+=======
+            {error instanceof Error
+              ? error.message
+              : 'Unable to load engagement from Meta Graph API.'}
+>>>>>>> origin/main
           </Alert>
         ) : null}
 
@@ -144,7 +156,13 @@ export function InstagramEngagementDialog({
                     <Typography variant="body2">{comment.text}</Typography>
                     {comment.timestamp ? (
                       <Typography variant="caption" color="text.secondary">
+<<<<<<< HEAD
                         {dayjs(comment.timestamp).format('MMM D, YYYY h:mm A')}
+=======
+                        {dayjs(comment.timestamp).format(
+                          'MMM D, YYYY h:mm A',
+                        )}
+>>>>>>> origin/main
                       </Typography>
                     ) : null}
                   </Box>

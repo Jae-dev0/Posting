@@ -9,7 +9,10 @@ const IMAGE_MIME_TYPES = new Set([
 ])
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+<<<<<<< HEAD
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024
+=======
+>>>>>>> origin/main
 export const MAX_IMAGES_PER_POST = 10
 
 export const facebookImageUpload = multer({
@@ -23,6 +26,7 @@ export const facebookImageUpload = multer({
     callback(null, true)
   },
 })
+<<<<<<< HEAD
 
 const MARKETING_MEDIA_MIME_TYPES = new Set([...IMAGE_MIME_TYPES, 'video/mp4'])
 
@@ -42,3 +46,5 @@ export const marketingMediaUpload = multer({
     callback(null, true)
   },
 })
+=======
+>>>>>>> origin/main

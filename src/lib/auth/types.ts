@@ -10,6 +10,7 @@ export type AuthUser = {
   role: UserRole
   companyId: number
   createdAt: string
+<<<<<<< HEAD
   status?: 'active' | 'disabled'
   isSuperAdmin?: boolean
   permissions?: string[]
@@ -19,6 +20,8 @@ export type AuthUser = {
     scope: 'platform' | 'company'
     companyId: number | null
   }>
+=======
+>>>>>>> origin/main
 }
 
 export type AuthSession = {

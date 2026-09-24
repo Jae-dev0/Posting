@@ -2,7 +2,11 @@ import { randomUUID } from 'crypto'
 import { mkdir, writeFile } from 'fs/promises'
 import path from 'path'
 
+<<<<<<< HEAD
 import { getPublicApiBaseUrl, env } from '../config/env.js'
+=======
+import { getPublicApiBaseUrl } from '../config/env.js'
+>>>>>>> origin/main
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
@@ -12,7 +16,10 @@ const EXT_BY_MIME: Record<string, string> = {
   'image/png': '.png',
   'image/gif': '.gif',
   'image/webp': '.webp',
+<<<<<<< HEAD
   'video/mp4': '.mp4',
+=======
+>>>>>>> origin/main
 }
 
 export async function savePublicMediaFile(file: {
@@ -29,6 +36,7 @@ export async function savePublicMediaFile(file: {
   return filename
 }
 
+<<<<<<< HEAD
 /**
  * Browser-facing media URL (via nginx same-origin `/api/media/...` when possible).
  * Prefer FRONTEND_URL so Docker UI on :3000 can load thumbnails after publish.
@@ -46,6 +54,9 @@ export function getPublicMediaUrl(filename: string) {
  * Absolute URL Meta Graph can fetch (requires PUBLIC_API_BASE_URL tunnel in local Docker).
  */
 export function getMetaFetchableMediaUrl(filename: string) {
+=======
+export function getPublicMediaUrl(filename: string) {
+>>>>>>> origin/main
   return `${getPublicApiBaseUrl()}/api/media/${filename}`
 }
 

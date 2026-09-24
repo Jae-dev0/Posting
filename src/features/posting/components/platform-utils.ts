@@ -39,6 +39,7 @@ export function getPlatformColor(platform: SocialPlatform) {
 export function getPlatformConfig(platform: SocialPlatform) {
   return platformConfig[platform]
 }
+<<<<<<< HEAD
 
 export function tryGetPlatformConfig(platform: string) {
   if (platform in platformConfig) {
@@ -46,3 +47,5 @@ export function tryGetPlatformConfig(platform: string) {
   }
   return null
 }
+=======
+>>>>>>> origin/main

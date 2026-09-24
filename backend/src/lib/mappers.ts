@@ -1,7 +1,13 @@
+<<<<<<< HEAD
 import type { ConnectedAccount, Post, PostMedia, SocialPlatform } from '@prisma/client'
 
 type PostWithAccounts = Post & {
   media: PostMedia[]
+=======
+import type { ConnectedAccount, Post, SocialPlatform } from '@prisma/client'
+
+type PostWithAccounts = Post & {
+>>>>>>> origin/main
   accounts: Array<{
     accountId: number
     account: Pick<ConnectedAccount, 'id' | 'platform' | 'accountName' | 'handle' | 'isConnected'>
@@ -22,8 +28,12 @@ export function mapPublishedPost(post: PostWithAccounts) {
   return {
     id: post.id,
     caption: post.caption,
+<<<<<<< HEAD
     mediaUrl: post.media[0]?.url ?? post.mediaUrl,
     media: post.media.map(({ url, type, position }) => ({ url, type, position })),
+=======
+    mediaUrl: post.mediaUrl,
+>>>>>>> origin/main
     platforms: post.accounts.map(
       ({ account }) => account.platform as SocialPlatform,
     ),
@@ -36,8 +46,12 @@ export function mapScheduledPost(post: PostWithAccounts) {
   return {
     id: post.id,
     caption: post.caption,
+<<<<<<< HEAD
     mediaUrl: post.media[0]?.url ?? post.mediaUrl,
     media: post.media.map(({ url, type, position }) => ({ url, type, position })),
+=======
+    mediaUrl: post.mediaUrl,
+>>>>>>> origin/main
     platforms: post.accounts.map(
       ({ account }) => account.platform as SocialPlatform,
     ),
@@ -50,9 +64,14 @@ export function mapPostDetail(post: PostWithAccounts) {
   return {
     id: post.id,
     caption: post.caption,
+<<<<<<< HEAD
     mediaUrl: post.media[0]?.url ?? post.mediaUrl,
     mediaType: post.media[0]?.type ?? post.mediaType,
     media: post.media.map(({ url, type, position }) => ({ url, type, position })),
+=======
+    mediaUrl: post.mediaUrl,
+    mediaType: post.mediaType,
+>>>>>>> origin/main
     publishMode: post.publishMode,
     status: post.status,
     scheduledAt: post.scheduledAt?.toISOString() ?? null,

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { LuBuilding2, LuGlobe, LuMegaphone } from 'react-icons/lu'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 
@@ -16,10 +17,18 @@ import {
   usePermissionSession,
   useRoleLabel,
 } from '@/lib/auth'
+=======
+import { Outlet, useNavigate } from 'react-router'
+
+import { DashboardLayout } from '@/components/layout'
+import { paths } from '@/config/paths'
+import { useAuthUser } from '@/lib/auth'
+>>>>>>> origin/main
 
 export function AppRoot() {
   const [user, { logout }] = useAuthUser()
   const navigate = useNavigate()
+<<<<<<< HEAD
   const { pathname } = useLocation()
   const session = usePermissionSession()
   const roleLabel = useRoleLabel()
@@ -59,6 +68,8 @@ export function AppRoot() {
     ) : department === 'marketing' && session.canAccessMarketing ? (
       <PostingTopNav />
     ) : undefined
+=======
+>>>>>>> origin/main
 
   return (
     <DashboardLayout
@@ -72,6 +83,7 @@ export function AppRoot() {
             }
           : null
       }
+<<<<<<< HEAD
       brandTitle={brand.title}
       brandHref={brand.href}
       brandIcon={brand.icon}
@@ -85,6 +97,9 @@ export function AppRoot() {
         ) : undefined
       }
       navItems={topNav}
+=======
+      enableDrawer={true}
+>>>>>>> origin/main
       onLogout={() => {
         logout()
         void navigate(paths.auth.login.getHref(), { replace: true })

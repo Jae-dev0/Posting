@@ -23,6 +23,7 @@ export const paths = {
         `/auth/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`,
     },
   },
+<<<<<<< HEAD
   platform: {
     root: {
       path: '/platform',
@@ -105,6 +106,8 @@ export const paths = {
       getHref: () => '/cms/users',
     },
   },
+=======
+>>>>>>> origin/main
   posting: {
     root: {
       path: '/posting',
@@ -112,10 +115,14 @@ export const paths = {
     },
     create: {
       path: '/posting/create',
+<<<<<<< HEAD
       getHref: (postId?: number | string) =>
         postId === undefined
           ? '/posting/create'
           : `/posting/create?postId=${postId}`,
+=======
+      getHref: () => '/posting/create',
+>>>>>>> origin/main
     },
     history: {
       path: '/posting/history',
@@ -125,6 +132,7 @@ export const paths = {
       path: '/posting/scheduled',
       getHref: () => '/posting/scheduled',
     },
+<<<<<<< HEAD
     drafts: {
       path: '/posting/drafts',
       getHref: () => '/posting/drafts',
@@ -137,6 +145,8 @@ export const paths = {
       path: '/posting/team',
       getHref: () => '/posting/team',
     },
+=======
+>>>>>>> origin/main
     accounts: {
       path: '/posting/accounts',
       getHref: () => '/posting/accounts',

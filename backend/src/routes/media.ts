@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { existsSync } from 'fs'
 
+<<<<<<< HEAD
 import {
   getPublicMediaUrl,
   resolveMediaPath,
@@ -8,10 +9,14 @@ import {
 } from '../lib/media-store.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
 import { marketingMediaUpload } from '../middleware/facebook-image-upload.js'
+=======
+import { resolveMediaPath } from '../lib/media-store.js'
+>>>>>>> origin/main
 
 export const mediaRouter = Router()
 
 /**
+<<<<<<< HEAD
  * Authenticated upload for draft/schedule media (returns a public media URL).
  * POST /api/media/upload  multipart field: `media`
  */
@@ -54,6 +59,8 @@ mediaRouter.post(
 )
 
 /**
+=======
+>>>>>>> origin/main
  * Public media files for Meta Instagram image_url fetching.
  * GET /api/media/:filename
  */

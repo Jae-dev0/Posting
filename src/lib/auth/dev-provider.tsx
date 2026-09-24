@@ -13,6 +13,7 @@ const MOCK_USER: AuthUser = {
   role: 'main_admin',
   companyId: 1,
   createdAt: new Date().toISOString(),
+<<<<<<< HEAD
   status: 'active',
   isSuperAdmin: true,
   permissions: [],
@@ -24,6 +25,8 @@ const MOCK_USER: AuthUser = {
       companyId: null,
     },
   ],
+=======
+>>>>>>> origin/main
 }
 
 export function DevAuthProvider({ children }: { children?: ReactNode }) {

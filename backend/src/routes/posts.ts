@@ -1,7 +1,13 @@
+<<<<<<< HEAD
 import { PostStatus, PublishMode, UserRole } from '@prisma/client'
 import { Router } from 'express'
 
 import { writeAuditLog } from '../lib/audit.js'
+=======
+import { PostStatus, PublishMode } from '@prisma/client'
+import { Router } from 'express'
+
+>>>>>>> origin/main
 import {
   mapPostDetail,
   mapPublishedPost,
@@ -9,10 +15,16 @@ import {
 } from '../lib/mappers.js'
 import { prisma } from '../lib/prisma.js'
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
+<<<<<<< HEAD
 import { createPostSchema, updatePostSchema } from '../schemas/posting.js'
 
 const postInclude = {
   media: { orderBy: { position: 'asc' } },
+=======
+import { createPostSchema } from '../schemas/posting.js'
+
+const postInclude = {
+>>>>>>> origin/main
   accounts: {
     include: {
       account: true,
@@ -39,6 +51,10 @@ postsRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
         where: {
           companyId,
           status: { in: [PostStatus.published, PostStatus.failed] },
+<<<<<<< HEAD
+=======
+          publishMode: PublishMode.now,
+>>>>>>> origin/main
         },
         include: postInclude,
         orderBy: { publishedAt: 'desc' },
@@ -71,6 +87,7 @@ postsRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
       return
     }
 
+<<<<<<< HEAD
     if (status === 'pending_approval') {
       const posts = await prisma.post.findMany({
         where: { companyId, status: PostStatus.pending_approval },
@@ -100,6 +117,8 @@ postsRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
       return
     }
 
+=======
+>>>>>>> origin/main
     const posts = await prisma.post.findMany({
       where: { companyId },
       include: postInclude,
@@ -144,13 +163,18 @@ postsRouter.get('/:id', async (req: AuthenticatedRequest, res, next) => {
 postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
   try {
     const companyId = req.user?.companyId
+<<<<<<< HEAD
     const userId = req.user?.id
     if (!companyId || !userId) {
+=======
+    if (!companyId) {
+>>>>>>> origin/main
       res.status(403).json({ message: 'Company context required' })
       return
     }
 
     const body = createPostSchema.parse(req.body)
+<<<<<<< HEAD
     const {
       caption,
       media,
@@ -159,6 +183,10 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
       scheduledAt,
       requireApproval,
     } = body
+=======
+    const { caption, mediaUrl, mediaType, selectedAccountIds, publishMode, scheduledAt } =
+      body
+>>>>>>> origin/main
 
     const accounts = await prisma.connectedAccount.findMany({
       where: { id: { in: selectedAccountIds }, companyId },
@@ -169,6 +197,7 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
       return
     }
 
+<<<<<<< HEAD
     if (
       selectedAccountIds.length > 0 &&
       req.user?.role !== UserRole.main_admin
@@ -198,10 +227,13 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
       }
     }
 
+=======
+>>>>>>> origin/main
     const now = new Date()
     let status: PostStatus = PostStatus.draft
     let publishedAt: Date | null = null
     let scheduledAtDate: Date | null = scheduledAt ? new Date(scheduledAt) : null
+<<<<<<< HEAD
     let mode = publishMode
 
     if (publishMode === 'now') {
@@ -219,6 +251,13 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
         publishedAt = now
         scheduledAtDate = null
       }
+=======
+
+    if (publishMode === 'now') {
+      status = PostStatus.published
+      publishedAt = now
+      scheduledAtDate = null
+>>>>>>> origin/main
     } else if (publishMode === 'schedule') {
       status = PostStatus.scheduled
       publishedAt = null
@@ -231,22 +270,34 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
     const post = await prisma.post.create({
       data: {
         companyId,
+<<<<<<< HEAD
         createdById: userId,
         caption: caption.trim() || '(untitled draft)',
         mediaUrl: media[0]?.url ?? null,
         mediaType: media[0]?.type ?? null,
         publishMode: mode,
+=======
+        createdById: req.user?.id,
+        caption,
+        mediaUrl: mediaUrl ?? null,
+        mediaType: mediaType ?? null,
+        publishMode,
+>>>>>>> origin/main
         status,
         publishedAt,
         scheduledAt: scheduledAtDate,
         accounts: {
           create: selectedAccountIds.map((accountId) => ({ accountId })),
         },
+<<<<<<< HEAD
         media: { create: media.map((item, position) => ({ ...item, position })) },
+=======
+>>>>>>> origin/main
       },
       include: postInclude,
     })
 
+<<<<<<< HEAD
     await writeAuditLog({
       companyId,
       userId,
@@ -263,12 +314,15 @@ postsRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
       summary: `Post #${post.id} created as ${status}`,
     })
 
+=======
+>>>>>>> origin/main
     res.status(201).json(mapPostDetail(post))
   } catch (error) {
     next(error)
   }
 })
 
+<<<<<<< HEAD
 postsRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
     const companyId = req.user?.companyId
@@ -440,6 +494,11 @@ postsRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
     const companyId = req.user?.companyId
     const userId = req.user?.id
+=======
+postsRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const companyId = req.user?.companyId
+>>>>>>> origin/main
     if (!companyId) {
       res.status(403).json({ message: 'Company context required' })
       return
@@ -458,6 +517,7 @@ postsRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
     }
 
     await prisma.post.delete({ where: { id } })
+<<<<<<< HEAD
 
     await writeAuditLog({
       companyId,
@@ -468,6 +528,8 @@ postsRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
       summary: `Post #${id} deleted`,
     })
 
+=======
+>>>>>>> origin/main
     res.status(204).send()
   } catch (error) {
     next(error)

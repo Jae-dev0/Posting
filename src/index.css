@@ -2,6 +2,7 @@
   cursor: pointer !important;
   padding: 0 !important;
 }
+<<<<<<< HEAD
 
 /* Override browser default blue/grey autofill background */
 input:-webkit-autofill,
@@ -13,3 +14,5 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+=======
+>>>>>>> origin/main

@@ -36,6 +36,7 @@ services:
       META_REDIRECT_URI: ${META_REDIRECT_URI:-http://localhost:3001/api/social/facebook/callback}
       META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-v22.0}
       META_OAUTH_SCOPES: ${META_OAUTH_SCOPES:-public_profile,pages_show_list,pages_read_engagement,pages_manage_posts,pages_read_user_content}
+<<<<<<< HEAD
       META_INSTAGRAM_OAUTH_SCOPES: ${META_INSTAGRAM_OAUTH_SCOPES:-instagram_basic,instagram_content_publish,instagram_manage_comments,pages_show_list,pages_read_engagement,business_management,public_profile}
       PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-}
       TIKTOK_CLIENT_KEY: ${TIKTOK_CLIENT_KEY:-}
@@ -45,6 +46,11 @@ services:
       SEED_DATABASE: ${SEED_DATABASE:-true}
     volumes:
       - posting_uploads:/app/uploads
+=======
+      META_INSTAGRAM_OAUTH_SCOPES: ${META_INSTAGRAM_OAUTH_SCOPES:-instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management,public_profile}
+      PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-}
+      SEED_DATABASE: ${SEED_DATABASE:-true}
+>>>>>>> origin/main
     depends_on:
       db:
         condition: service_healthy
@@ -69,7 +75,10 @@ services:
 
 volumes:
   posting_pgdata:
+<<<<<<< HEAD
   posting_uploads:
+=======
+>>>>>>> origin/main
 
 secrets:
   npm-token:

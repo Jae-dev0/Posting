@@ -27,6 +27,7 @@ enum PublishMode {
 enum PostStatus {
   draft
   scheduled
+<<<<<<< HEAD
   pending_approval
   published
   failed
@@ -34,11 +35,18 @@ enum PostStatus {
 }
 
 /// Marketing roles (unchanged). Platform/CMS roles live in Role + UserRoleAssignment.
+=======
+  published
+  failed
+}
+
+>>>>>>> origin/main
 enum UserRole {
   main_admin
   admin
 }
 
+<<<<<<< HEAD
 enum CompanyStatus {
   active
   disabled
@@ -86,11 +94,23 @@ model Company {
   navigationItems    NavigationItem[]
   roleAssignments    UserRoleAssignment[]
   roles              Role[]
+=======
+model Company {
+  id                Int                @id @default(autoincrement())
+  name              String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  users             User[]
+  connectedAccounts ConnectedAccount[]
+  socialAccounts    SocialAccount[]
+  posts             Post[]
+>>>>>>> origin/main
 
   @@map("companies")
 }
 
 model User {
+<<<<<<< HEAD
   id                 Int                  @id @default(autoincrement())
   email              String               @unique
   passwordHash       String
@@ -112,11 +132,26 @@ model User {
   pagesCreated       Page[]               @relation("PageCreatedBy")
   pagesUpdated       Page[]               @relation("PageUpdatedBy")
   mediaUploaded      CmsMedia[]           @relation("MediaUploadedBy")
+=======
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           UserRole        @default(admin)
+  companyId      Int
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  socialAccounts SocialAccount[]
+  posts          Post[]          @relation("PostCreator")
+>>>>>>> origin/main
 
   @@index([companyId])
   @@map("users")
 }
 
+<<<<<<< HEAD
 model Permission {
   id          Int              @id @default(autoincrement())
   name        String           @unique
@@ -314,6 +349,20 @@ model ConnectedAccount {
   posts         PostAccount[]
   socialAccount SocialAccount?
   permissions   AccountPermission[]
+=======
+model ConnectedAccount {
+  id            Int            @id @default(autoincrement())
+  companyId     Int
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  platform      SocialPlatform
+  accountName   String
+  handle        String
+  isConnected   Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  posts         PostAccount[]
+  socialAccount SocialAccount?
+>>>>>>> origin/main
 
   @@unique([companyId, platform, handle])
   @@index([companyId])
@@ -334,7 +383,10 @@ model SocialAccount {
   pageId             String
   pageName           String
   accessTokenEnc     String
+<<<<<<< HEAD
   refreshTokenEnc    String?
+=======
+>>>>>>> origin/main
   tokenExpiresAt     DateTime?
   isConnected        Boolean           @default(true)
   createdAt          DateTime          @default(now())
@@ -363,13 +415,17 @@ model Post {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   accounts       PostAccount[]
+<<<<<<< HEAD
   media          PostMedia[]
+=======
+>>>>>>> origin/main
 
   @@index([companyId])
   @@index([externalPostId])
   @@map("posts")
 }
 
+<<<<<<< HEAD
 /// Ordered media attached to a marketing post. A post is either an image gallery
 /// (up to ten records) or a single video record.
 model PostMedia {
@@ -386,6 +442,8 @@ model PostMedia {
   @@map("post_media")
 }
 
+=======
+>>>>>>> origin/main
 model PostAccount {
   postId    Int
   accountId Int
@@ -395,6 +453,7 @@ model PostAccount {
   @@id([postId, accountId])
   @@map("post_accounts")
 }
+<<<<<<< HEAD
 
 /// Who can publish to which connected page/account within a company.
 model AccountPermission {
@@ -431,3 +490,5 @@ model AuditLog {
   @@index([companyId, createdAt])
   @@map("audit_logs")
 }
+=======
+>>>>>>> origin/main

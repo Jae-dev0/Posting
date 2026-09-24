@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 import { type ReactNode } from 'react'
 import {
+<<<<<<< HEAD
   LuCalendarDays,
   LuChartColumn,
   LuCircleHelp,
@@ -19,6 +20,13 @@ import {
   LuPenLine,
   LuPlus,
   LuShield,
+=======
+  LuCircleHelp,
+  LuClock,
+  LuLink,
+  LuPenLine,
+  LuPlus,
+>>>>>>> origin/main
   LuUsers,
 } from 'react-icons/lu'
 import { Link as RouterLink, useLocation } from 'react-router'
@@ -28,16 +36,20 @@ import { useCanManageAccounts } from '@/lib/auth/hooks'
 
 const publishingNavItems = [
   {
+<<<<<<< HEAD
     label: 'Analytics',
     href: paths.dashboard.getHref(),
     icon: LuChartColumn,
   },
   {
+=======
+>>>>>>> origin/main
     label: 'Create Post',
     href: paths.posting.create.getHref(),
     icon: LuPlus,
   },
   {
+<<<<<<< HEAD
     label: 'Scheduled',
     href: paths.posting.scheduled.getHref(),
     icon: LuClock,
@@ -57,21 +69,39 @@ const publishingNavItems = [
     href: paths.posting.history.getHref(),
     icon: LuPenLine,
   },
+=======
+    label: 'Post History',
+    href: paths.posting.history.getHref(),
+    icon: LuPenLine,
+  },
+  {
+    label: 'Scheduled Posts',
+    href: paths.posting.scheduled.getHref(),
+    icon: LuClock,
+  },
+>>>>>>> origin/main
 ] as const
 
 const adminNavItems = [
   {
+<<<<<<< HEAD
     label: 'Team & Permissions',
     href: paths.posting.team.getHref(),
     icon: LuShield,
   },
   {
+=======
+>>>>>>> origin/main
     label: 'Connected Accounts',
     href: paths.posting.accounts.getHref(),
     icon: LuLink,
   },
   {
+<<<<<<< HEAD
     label: 'Users',
+=======
+    label: 'Account Management',
+>>>>>>> origin/main
     href: paths.posting.users.getHref(),
     icon: LuUsers,
   },
@@ -164,9 +194,15 @@ export function PostingSidebar() {
         borderBottom: { xs: '1px solid', md: 'none' },
         borderColor: 'divider',
         bgcolor: 'background.paper',
+<<<<<<< HEAD
         display: { xs: 'none', md: 'flex' },
         flexDirection: 'column',
         minHeight: { md: 'calc(100vh - 112px)' },
+=======
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: { md: 'calc(100vh - 64px)' },
+>>>>>>> origin/main
       }}
     >
       <Stack spacing={2.5} sx={{ py: 2, flexGrow: 1 }}>
@@ -181,7 +217,11 @@ export function PostingSidebar() {
         ) : null}
       </Stack>
 
+<<<<<<< HEAD
       <Box sx={{ p: 2, mt: 'auto' }}>
+=======
+      <Box sx={{ p: 2, mt: 'auto', display: { xs: 'none', md: 'block' } }}>
+>>>>>>> origin/main
         <Paper
           variant="outlined"
           sx={{

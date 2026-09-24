@@ -12,6 +12,7 @@ import {
 } from '@mui/material'
 import { FormEvent, useEffect, useState } from 'react'
 
+<<<<<<< HEAD
 import { useIsSuperAdmin } from '@/lib/auth'
 import { useSnackbar } from '@/lib/mui/snackbar-hooks'
 
@@ -21,6 +22,12 @@ import {
   USER_ROLE,
   USER_ROLE_OPTIONS,
 } from '../../constants'
+=======
+import { useSnackbar } from '@/lib/mui/snackbar-hooks'
+
+import { useCreateUser, useUpdateUser, type ManagedUser } from '../../api'
+import { USER_ROLE, USER_ROLE_OPTIONS } from '../../constants'
+>>>>>>> origin/main
 import { getApiErrorMessage } from '../../lib/get-api-error-message'
 
 import {
@@ -52,15 +59,21 @@ export function UserFormDialog({
   dialogProps,
 }: UserFormDialogProps) {
   const { showSuccess, showError } = useSnackbar()
+<<<<<<< HEAD
   const isSuperAdmin = useIsSuperAdmin()
+=======
+>>>>>>> origin/main
   const isEditMode = Boolean(user)
   const [values, setValues] = useState<UserFormValues>(emptyFormValues)
   const [error, setError] = useState<string | null>(null)
 
+<<<<<<< HEAD
   const roleOptions = isSuperAdmin
     ? USER_ROLE_OPTIONS
     : MARKETING_SUB_ADMIN_OPTIONS
 
+=======
+>>>>>>> origin/main
   useEffect(() => {
     if (!open) return
 
@@ -74,10 +87,14 @@ export function UserFormDialog({
         confirmPassword: '',
       })
     } else {
+<<<<<<< HEAD
       setValues({
         ...emptyFormValues,
         role: USER_ROLE.ADMIN,
       })
+=======
+      setValues(emptyFormValues)
+>>>>>>> origin/main
     }
     setError(null)
   }, [open, user])
@@ -103,6 +120,7 @@ export function UserFormDialog({
   })
 
   const isSubmitting = isCreatePending || isUpdatePending
+<<<<<<< HEAD
   const title = isEditMode
     ? 'Edit Account'
     : isSuperAdmin
@@ -111,6 +129,12 @@ export function UserFormDialog({
   const subtitle = isEditMode
     ? 'Update this Marketing account details and access level.'
     : 'Add an account with access to Marketing for this company.'
+=======
+  const title = isEditMode ? 'Edit Account' : 'Create Account'
+  const subtitle = isEditMode
+    ? 'Update this admin account details and access level.'
+    : 'Add a new admin account that can sign in to the publisher.'
+>>>>>>> origin/main
   const submitLabel = isEditMode ? 'Update Account' : 'Create Account'
 
   const updateField = <K extends keyof UserFormValues>(
@@ -122,7 +146,10 @@ export function UserFormDialog({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+<<<<<<< HEAD
     if (isSubmitting) return
+=======
+>>>>>>> origin/main
     setError(null)
 
     const schema = isEditMode ? userFormSchema : createUserFormSchema
@@ -164,9 +191,13 @@ export function UserFormDialog({
       fullWidth
       maxWidth="sm"
       open={open}
+<<<<<<< HEAD
       onClose={() => {
         if (!isSubmitting) onClose()
       }}
+=======
+      onClose={onClose}
+>>>>>>> origin/main
       {...dialogProps}
       slotProps={{
         paper: {
@@ -187,7 +218,11 @@ export function UserFormDialog({
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error ? (
+<<<<<<< HEAD
             <Typography color="error" variant="body2" role="alert">
+=======
+            <Typography color="error" variant="body2">
+>>>>>>> origin/main
               {error}
             </Typography>
           ) : null}
@@ -195,8 +230,11 @@ export function UserFormDialog({
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               label="First name"
+<<<<<<< HEAD
               name="firstName"
               required
+=======
+>>>>>>> origin/main
               value={values.firstName}
               onChange={(event) => updateField('firstName', event.target.value)}
               fullWidth
@@ -204,8 +242,11 @@ export function UserFormDialog({
             />
             <TextField
               label="Last name"
+<<<<<<< HEAD
               name="lastName"
               required
+=======
+>>>>>>> origin/main
               value={values.lastName}
               onChange={(event) => updateField('lastName', event.target.value)}
               fullWidth
@@ -214,8 +255,11 @@ export function UserFormDialog({
 
           <TextField
             label="Email"
+<<<<<<< HEAD
             name="email"
             required
+=======
+>>>>>>> origin/main
             type="email"
             autoComplete="off"
             value={values.email}
@@ -238,7 +282,11 @@ export function UserFormDialog({
             }}
             fullWidth
           >
+<<<<<<< HEAD
             {roleOptions.map((option) => (
+=======
+            {USER_ROLE_OPTIONS.map((option) => (
+>>>>>>> origin/main
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>

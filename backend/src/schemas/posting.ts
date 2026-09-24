@@ -2,10 +2,13 @@ import { z } from 'zod'
 
 export const socialPlatformSchema = z.enum(['facebook', 'instagram', 'tiktok'])
 export const mediaTypeSchema = z.enum(['image', 'video'])
+<<<<<<< HEAD
 export const postMediaSchema = z.object({
   url: z.string().url(),
   type: mediaTypeSchema,
 })
+=======
+>>>>>>> origin/main
 export const publishModeSchema = z.enum(['now', 'schedule', 'draft'])
 
 export const createAccountSchema = z.object({
@@ -27,6 +30,7 @@ export const updateAccountSchema = z
 
 export const createPostSchema = z
   .object({
+<<<<<<< HEAD
     caption: z.string().max(2200),
     media: z.array(postMediaSchema).max(10).optional().default([]),
     selectedAccountIds: z.array(z.number().int().positive()).default([]),
@@ -43,6 +47,16 @@ export const createPostSchema = z
     if (!hasVideo && value.media.some((item) => item.type !== 'image')) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['media'], message: 'Image galleries can contain images only' })
     }
+=======
+    caption: z.string().min(1).max(2200),
+    mediaUrl: z.string().url().nullable().optional(),
+    mediaType: mediaTypeSchema.nullable().optional(),
+    selectedAccountIds: z.array(z.number().int().positive()).min(1),
+    publishMode: publishModeSchema,
+    scheduledAt: z.string().datetime().nullable().optional(),
+  })
+  .superRefine((value, ctx) => {
+>>>>>>> origin/main
     if (value.publishMode === 'schedule' && !value.scheduledAt) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -50,6 +64,7 @@ export const createPostSchema = z
         message: 'scheduledAt is required when publishMode is schedule',
       })
     }
+<<<<<<< HEAD
 
     if (value.publishMode !== 'draft') {
       if (!value.caption.trim()) {
@@ -94,4 +109,6 @@ export const updatePostSchema = z
     if (hasVideo && value.media.length !== 1) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['media'], message: 'A post can contain one video or up to ten images' })
     }
+=======
+>>>>>>> origin/main
   })

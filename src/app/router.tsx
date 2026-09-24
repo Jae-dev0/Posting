@@ -10,6 +10,7 @@ import {
 
 import { CenterLayout, PublicLayout } from '@/components/layout'
 import { PageNotFound } from '@/components/ui/page-not-found'
+<<<<<<< HEAD
 import { RequirePermission } from '@/components/ui/require-permission'
 import { paths } from '@/config/paths'
 import { CmsLayout } from '@/features/cms'
@@ -56,6 +57,19 @@ import {
   PostHistoryPage,
   ScheduledPostsPage,
   TeamPermissionsPage,
+=======
+import { paths } from '@/config/paths'
+import { PostingLayout } from '@/features/posting'
+import { useAuth, useCanManageAccounts } from '@/lib/auth'
+
+import { Login } from './routes/auth'
+import { Dashboard } from './routes/dashboard'
+import {
+  ConnectedAccountsPage,
+  CreatePostPage,
+  PostHistoryPage,
+  ScheduledPostsPage,
+>>>>>>> origin/main
   UserAccountsPage,
 } from './routes/posting'
 import { AppRoot } from './routes/root'
@@ -67,6 +81,7 @@ const LoginRedirect = () => {
   return <Navigate to={paths.auth.login.getHref(pathname)} replace />
 }
 
+<<<<<<< HEAD
 const RoleHomeRedirect = () => {
   const department = useHomeDepartment()
   return <Navigate to={getDepartmentHomePath(department)} replace />
@@ -112,6 +127,12 @@ const RequireMarketingAccess = ({ children }: { children: ReactNode }) => {
     return <Navigate to={getDepartmentHomePath(department)} replace />
   }
   return children
+=======
+const HomeRedirect = () => {
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo')
+  return <Navigate to={redirectTo ?? paths.notFound.getHref()} replace />
+>>>>>>> origin/main
 }
 
 const RequireAccountManagement = ({ children }: { children: ReactNode }) => {
@@ -145,6 +166,7 @@ const protectedRoutes = createBrowserRouter([
   {
     path: paths.home.path,
     element: <AuthAppRoot />,
+<<<<<<< HEAD
     children: [{ index: true, element: <RoleHomeRedirect /> }],
   },
   {
@@ -312,6 +334,12 @@ const protectedRoutes = createBrowserRouter([
             ),
           },
         ],
+=======
+    children: [
+      {
+        index: true,
+        element: <Navigate to={paths.posting.create.getHref()} replace />,
+>>>>>>> origin/main
       },
     ],
   },
@@ -320,6 +348,7 @@ const protectedRoutes = createBrowserRouter([
     element: <AuthAppRoot />,
     children: [
       {
+<<<<<<< HEAD
         element: (
           <RequireMarketingAccess>
             <PostingLayout />
@@ -338,6 +367,21 @@ const protectedRoutes = createBrowserRouter([
                 <TeamPermissionsPage />
               </RequireAccountManagement>
             ),
+=======
+        element: <PostingLayout />,
+        children: [
+          {
+            path: 'create',
+            element: <CreatePostPage />,
+          },
+          {
+            path: 'history',
+            element: <PostHistoryPage />,
+          },
+          {
+            path: 'scheduled',
+            element: <ScheduledPostsPage />,
+>>>>>>> origin/main
           },
           {
             path: 'accounts',
@@ -366,6 +410,7 @@ const protectedRoutes = createBrowserRouter([
   {
     path: paths.dashboard.path,
     element: <AuthAppRoot />,
+<<<<<<< HEAD
     children: [
       {
         index: true,
@@ -380,6 +425,13 @@ const protectedRoutes = createBrowserRouter([
   {
     path: '*',
     element: <CatchAllRedirect />,
+=======
+    children: [{ index: true, element: <Dashboard /> }],
+  },
+  {
+    path: '*',
+    element: <HomeRedirect />,
+>>>>>>> origin/main
   },
 ])
 

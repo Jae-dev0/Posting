@@ -11,7 +11,10 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+<<<<<<< HEAD
 import { isAxiosError } from 'axios'
+=======
+>>>>>>> origin/main
 import dayjs from 'dayjs'
 
 import {
@@ -39,6 +42,7 @@ const REACTION_META: Array<{
   { key: 'angry', label: 'Angry', emoji: '😡' },
 ]
 
+<<<<<<< HEAD
 function getEngagementErrorMessage(error: unknown) {
   if (isAxiosError(error)) {
     const data: unknown = error.response?.data
@@ -59,6 +63,8 @@ function getEngagementErrorMessage(error: unknown) {
   return 'Unable to load engagement from Meta Graph API.'
 }
 
+=======
+>>>>>>> origin/main
 export function FacebookEngagementDialog({
   open,
   postId,
@@ -90,7 +96,13 @@ export function FacebookEngagementDialog({
               </Button>
             }
           >
+<<<<<<< HEAD
             {getEngagementErrorMessage(error)}
+=======
+            {error instanceof Error
+              ? error.message
+              : 'Unable to load engagement from Meta Graph API.'}
+>>>>>>> origin/main
           </Alert>
         ) : null}
 

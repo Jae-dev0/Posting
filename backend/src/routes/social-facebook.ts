@@ -18,7 +18,10 @@ import {
   fetchFacebookUser,
   fetchManagedPages,
   fetchPagesWithInstagram,
+<<<<<<< HEAD
   fetchPhotoLargestSource,
+=======
+>>>>>>> origin/main
   fetchPostEngagement,
   MetaGraphError,
   publishPageFeedPost,
@@ -571,6 +574,7 @@ facebookSocialRouter.post(
             },
           })
           externalPostId = photo.post_id ?? photo.id
+<<<<<<< HEAD
           try {
             primaryMediaUrl = await fetchPhotoLargestSource({
               photoId: photo.id,
@@ -579,6 +583,8 @@ facebookSocialRouter.post(
           } catch {
             // Keep local media URL if CDN lookup fails.
           }
+=======
+>>>>>>> origin/main
         } else if (imageUrls.length > 1) {
           const photoIds: string[] = []
           for (const imageUrl of imageUrls) {

@@ -142,6 +142,7 @@ export async function publishPagePhotoPost(input: {
   return parseGraphResponse<{ id: string; post_id?: string }>(response)
 }
 
+<<<<<<< HEAD
 export async function publishPageVideoPost(input: {
   pageId: string
   pageAccessToken: string
@@ -156,6 +157,8 @@ export async function publishPageVideoPost(input: {
   return parseGraphResponse<{ id: string }>(response)
 }
 
+=======
+>>>>>>> origin/main
 export async function publishPagePhotoFromFile(input: {
   pageId: string
   pageAccessToken: string
@@ -186,6 +189,7 @@ export async function publishPagePhotoFromFile(input: {
   return parseGraphResponse<{ id: string; post_id?: string }>(response)
 }
 
+<<<<<<< HEAD
 /**
  * Page access tokens resolve `me` to the Page itself — used to find the FB Page
  * that owns an Instagram Business account when only the Page token is stored.
@@ -259,6 +263,8 @@ export async function hostImageOnMetaCdn(input: {
   })
 }
 
+=======
+>>>>>>> origin/main
 export async function publishPageMultiPhotoPost(input: {
   pageId: string
   pageAccessToken: string
@@ -531,6 +537,7 @@ export async function fetchInstagramMediaEngagement(input: {
   mediaId: string
   pageAccessToken: string
 }) {
+<<<<<<< HEAD
   const baseFields = [
     'id',
     'caption',
@@ -565,6 +572,27 @@ export async function fetchInstagramMediaEngagement(input: {
     }
     throw error
   }
+=======
+  const url = new URL(`${graphBaseUrl()}/${input.mediaId}`)
+  url.searchParams.set(
+    'fields',
+    [
+      'id',
+      'caption',
+      'media_type',
+      'media_url',
+      'permalink',
+      'timestamp',
+      'like_count',
+      'comments_count',
+      'comments{id,text,timestamp,username}',
+    ].join(','),
+  )
+  url.searchParams.set('access_token', input.pageAccessToken)
+
+  const response = await fetch(url)
+  return parseGraphResponse<MetaInstagramMediaEngagement>(response)
+>>>>>>> origin/main
 }
 
 export function buildFacebookOAuthUrl(state: string, scopes?: string[]) {

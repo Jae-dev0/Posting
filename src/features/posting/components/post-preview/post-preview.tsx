@@ -190,7 +190,12 @@ function FacebookPreviewFrame({
         overflow: 'hidden',
         bgcolor: '#FFFFFF',
         color: '#050505',
+<<<<<<< HEAD
         fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif',
+=======
+        fontFamily:
+          'Segoe UI, Helvetica, Arial, sans-serif',
+>>>>>>> origin/main
       }}
     >
       <Stack spacing={1.25} sx={{ p: 1.5, pb: 1 }}>
@@ -413,7 +418,12 @@ function InstagramPreviewFrame({
 export function PostPreview({ draft, accounts }: PostPreviewProps) {
   const { caption, mediaUrls, selectedAccountIds } = draft
   const selectedAccounts = useMemo(
+<<<<<<< HEAD
     () => accounts.filter((account) => selectedAccountIds.includes(account.id)),
+=======
+    () =>
+      accounts.filter((account) => selectedAccountIds.includes(account.id)),
+>>>>>>> origin/main
     [accounts, selectedAccountIds],
   )
 

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 
+<<<<<<< HEAD
 import {
   buildAuthContext,
   type AuthContextUser,
@@ -43,6 +44,14 @@ export async function loadAuthContext(userId: number) {
     rest,
     roleAssignments as unknown as RoleAssignmentWithRole[],
   )
+=======
+import { verifyAccessToken } from '../lib/jwt.js'
+import { prisma } from '../lib/prisma.js'
+import { mapUser } from '../lib/user-mapper.js'
+
+export type AuthenticatedRequest = Request & {
+  user?: ReturnType<typeof mapUser>
+>>>>>>> origin/main
 }
 
 export async function requireAuth(
@@ -61,24 +70,35 @@ export async function requireAuth(
 
   try {
     const payload = verifyAccessToken(token)
+<<<<<<< HEAD
     const authUser = await loadAuthContext(payload.sub)
 
     if (!authUser) {
+=======
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } })
+
+    if (!user) {
+>>>>>>> origin/main
       res.status(401).json({ message: 'Invalid or expired token' })
       return
     }
 
+<<<<<<< HEAD
     if (authUser.status === 'disabled') {
       res.status(403).json({ message: 'Account is disabled' })
       return
     }
 
     req.user = authUser
+=======
+    req.user = mapUser(user)
+>>>>>>> origin/main
     next()
   } catch {
     res.status(401).json({ message: 'Invalid or expired token' })
   }
 }
+<<<<<<< HEAD
 
 export function requirePermission(...permissions: PermissionName[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -176,3 +196,5 @@ export function requireTenantCompany(
   }
   next()
 }
+=======
+>>>>>>> origin/main

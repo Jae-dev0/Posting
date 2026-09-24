@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Prisma, UserRole } from '@prisma/client'
 import { Router } from 'express'
 
@@ -13,11 +14,21 @@ import {
   requireTenantCompany,
   type AuthenticatedRequest,
 } from '../middleware/auth.js'
+=======
+import { UserRole } from '@prisma/client'
+import { Router } from 'express'
+
+import { hashPassword } from '../lib/password.js'
+import { prisma } from '../lib/prisma.js'
+import { mapUser } from '../lib/user-mapper.js'
+import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js'
+>>>>>>> origin/main
 import { requireMainAdmin } from '../middleware/require-main-admin.js'
 import { createUserSchema, updateUserSchema } from '../schemas/users.js'
 
 export const usersRouter = Router()
 
+<<<<<<< HEAD
 usersRouter.use(
   requireAuth,
   requireMainAdmin,
@@ -45,18 +56,38 @@ async function protectLastMarketingAdmin(
     throw new LastMarketingAdminError(
       'Each company must retain an active Marketing Admin',
     )
+=======
+usersRouter.use(requireAuth, requireMainAdmin)
+
+const MAIN_ADMIN_ROLE = UserRole.main_admin
+
+async function countMainAdmins() {
+  return prisma.user.count({ where: { role: MAIN_ADMIN_ROLE } })
+>>>>>>> origin/main
 }
 
 usersRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {
+<<<<<<< HEAD
     const companyId = req.tenantCompanyId!
 
     const users = await prisma.user.findMany({
       where: { companyId, ...marketingAccountsWhere(companyId) },
+=======
+    const companyId = req.user?.companyId
+    if (!companyId) {
+      res.status(403).json({ message: 'Company context required' })
+      return
+    }
+
+    const users = await prisma.user.findMany({
+      where: { companyId },
+>>>>>>> origin/main
       orderBy: [{ role: 'asc' }, { id: 'asc' }],
     })
     res.json(users.map(mapUser))
   } catch (error) {
+<<<<<<< HEAD
     if (error instanceof LastMarketingAdminError) {
       res.status(400).json({ message: error.message })
       return
@@ -70,12 +101,15 @@ usersRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
       })
       return
     }
+=======
+>>>>>>> origin/main
     next(error)
   }
 })
 
 usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
   try {
+<<<<<<< HEAD
     const companyId = req.tenantCompanyId!
 
     const body = createUserSchema.parse(req.body)
@@ -93,6 +127,16 @@ usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
         ? MAIN_ADMIN_ROLE
         : UserRole.admin
 
+=======
+    const companyId = req.user?.companyId
+    if (!companyId) {
+      res.status(403).json({ message: 'Company context required' })
+      return
+    }
+
+    const body = createUserSchema.parse(req.body)
+    const { firstName, lastName, email, password, role } = body
+>>>>>>> origin/main
     const passwordHash = await hashPassword(password)
 
     const user = await prisma.user.create({
@@ -106,6 +150,7 @@ usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
       },
     })
 
+<<<<<<< HEAD
     await writeAuditLog({
       companyId,
       userId: req.user!.id,
@@ -129,13 +174,25 @@ usersRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
       })
       return
     }
+=======
+    res.status(201).json(mapUser(user))
+  } catch (error) {
+>>>>>>> origin/main
     next(error)
   }
 })
 
 usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
+<<<<<<< HEAD
     const companyId = req.tenantCompanyId!
+=======
+    const companyId = req.user?.companyId
+    if (!companyId) {
+      res.status(403).json({ message: 'Company context required' })
+      return
+    }
+>>>>>>> origin/main
 
     const id = Number(req.params.id)
     if (!Number.isInteger(id)) {
@@ -144,18 +201,23 @@ usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
     }
 
     const body = updateUserSchema.parse(req.body)
+<<<<<<< HEAD
     const existing = await prisma.user.findFirst({
       where: { id, companyId, ...marketingAccountsWhere(companyId) },
       include: {
         roleAssignments: { select: { role: { select: { name: true } } } },
       },
     })
+=======
+    const existing = await prisma.user.findFirst({ where: { id, companyId } })
+>>>>>>> origin/main
 
     if (!existing) {
       res.status(404).json({ message: 'User not found' })
       return
     }
 
+<<<<<<< HEAD
     const hasAdminAssignment = existing.roleAssignments?.some(
       (assignment) => assignment.role.name === ROLE_NAMES.MARKETING_ADMIN,
     )
@@ -179,11 +241,14 @@ usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
       return
     }
 
+=======
+>>>>>>> origin/main
     const isDemotingMainAdmin =
       existing.role === MAIN_ADMIN_ROLE &&
       body.role !== undefined &&
       body.role !== MAIN_ADMIN_ROLE
 
+<<<<<<< HEAD
     const passwordHash =
       body.password !== undefined
         ? await hashPassword(body.password)
@@ -236,13 +301,49 @@ usersRouter.patch('/:id', async (req: AuthenticatedRequest, res, next) => {
       })
       return
     }
+=======
+    if (isDemotingMainAdmin) {
+      const mainAdminCount = await countMainAdmins()
+      if (mainAdminCount <= 1) {
+        res.status(400).json({
+          message: 'Cannot demote the last main admin',
+        })
+        return
+      }
+    }
+
+    const passwordHash =
+      body.password !== undefined ? await hashPassword(body.password) : undefined
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        email: body.email?.toLowerCase(),
+        role: body.role,
+        passwordHash,
+      },
+    })
+
+    res.json(mapUser(user))
+  } catch (error) {
+>>>>>>> origin/main
     next(error)
   }
 })
 
 usersRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
   try {
+<<<<<<< HEAD
     const companyId = req.tenantCompanyId!
+=======
+    const companyId = req.user?.companyId
+    if (!companyId) {
+      res.status(403).json({ message: 'Company context required' })
+      return
+    }
+>>>>>>> origin/main
 
     const id = Number(req.params.id)
     if (!Number.isInteger(id)) {
@@ -255,18 +356,23 @@ usersRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
       return
     }
 
+<<<<<<< HEAD
     const existing = await prisma.user.findFirst({
       where: { id, companyId, ...marketingAccountsWhere(companyId) },
       include: {
         roleAssignments: { select: { role: { select: { name: true } } } },
       },
     })
+=======
+    const existing = await prisma.user.findFirst({ where: { id, companyId } })
+>>>>>>> origin/main
 
     if (!existing) {
       res.status(404).json({ message: 'User not found' })
       return
     }
 
+<<<<<<< HEAD
     const hasAdminAssignment = existing.roleAssignments?.some(
       (assignment) => assignment.role.name === ROLE_NAMES.MARKETING_ADMIN,
     )
@@ -312,6 +418,21 @@ usersRouter.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
       })
       return
     }
+=======
+    if (existing.role === MAIN_ADMIN_ROLE) {
+      const mainAdminCount = await countMainAdmins()
+      if (mainAdminCount <= 1) {
+        res.status(400).json({
+          message: 'Cannot delete the last main admin',
+        })
+        return
+      }
+    }
+
+    await prisma.user.delete({ where: { id } })
+    res.status(204).send()
+  } catch (error) {
+>>>>>>> origin/main
     next(error)
   }
 })

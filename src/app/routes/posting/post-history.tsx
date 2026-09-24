@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useMemo, useState } from 'react'
 
 import {
@@ -5,6 +6,12 @@ import {
   ListPageShowingCount,
   PagedTableCard,
 } from '@/components/layout'
+=======
+import { Card, CardContent, Typography } from '@mui/material'
+import { useMemo, useState } from 'react'
+
+import { ContentLayout } from '@/components/layout'
+>>>>>>> origin/main
 import {
   FacebookEngagementDialog,
   InstagramEngagementDialog,
@@ -14,7 +21,10 @@ import {
   type PublishedPost,
   type SocialPlatform,
 } from '@/features/posting'
+<<<<<<< HEAD
 import { paginate } from '@/utils'
+=======
+>>>>>>> origin/main
 
 export function PostHistoryPage() {
   const facebookQuery = useFacebookPosts()
@@ -64,6 +74,7 @@ export function PostHistoryPage() {
       }
     >()
 
+<<<<<<< HEAD
     const toBrowserMediaUrl = (url: string | null) => {
       if (!url) return null
       try {
@@ -82,6 +93,8 @@ export function PostHistoryPage() {
       return url
     }
 
+=======
+>>>>>>> origin/main
     for (const post of [
       ...(facebookQuery.data ?? []),
       ...(instagramQuery.data ?? []),
@@ -91,7 +104,11 @@ export function PostHistoryPage() {
         byId.set(post.id, {
           id: post.id,
           caption: post.caption,
+<<<<<<< HEAD
           mediaUrl: toBrowserMediaUrl(post.mediaUrl),
+=======
+          mediaUrl: post.mediaUrl,
+>>>>>>> origin/main
           platforms: [...post.platforms],
           publishedAt: post.publishedAt,
           createdAt: post.createdAt,
@@ -101,7 +118,10 @@ export function PostHistoryPage() {
       }
       byId.set(post.id, {
         ...existing,
+<<<<<<< HEAD
         mediaUrl: existing.mediaUrl ?? toBrowserMediaUrl(post.mediaUrl),
+=======
+>>>>>>> origin/main
         platforms: [...new Set([...existing.platforms, ...post.platforms])],
       })
     }
@@ -128,6 +148,7 @@ export function PostHistoryPage() {
         canFetchFacebookEngagement: facebookEngagementIds.has(post.id),
         canFetchInstagramEngagement: instagramEngagementIds.has(post.id),
       }))
+<<<<<<< HEAD
   }, [
     facebookEngagementIds,
     facebookQuery.data,
@@ -144,6 +165,9 @@ export function PostHistoryPage() {
       ? instagramQuery.error.message
       : undefined
   const historyError = facebookError ?? instagramError
+=======
+  }, [facebookEngagementIds, facebookQuery.data, instagramEngagementIds, instagramQuery.data])
+>>>>>>> origin/main
 
   const status =
     facebookQuery.status === 'pending' || instagramQuery.status === 'pending'
@@ -152,6 +176,7 @@ export function PostHistoryPage() {
         ? 'error'
         : 'success'
 
+<<<<<<< HEAD
   const [pagination, setPagination] = useState({ page: 1, perPage: 10 })
   const { data, total, currentPage } = paginate(
     publishedPosts,
@@ -211,5 +236,42 @@ export function PostHistoryPage() {
         </>
       }
     />
+=======
+  return (
+    <ContentLayout title="Post History">
+      <Card
+        elevation={0}
+        sx={{ m: 3, border: '1px solid', borderColor: 'divider' }}
+      >
+        <CardContent>
+          <Typography variant="h5" fontWeight={700} gutterBottom>
+            Post History
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Browse what you published (thumbnail + caption). Open Reactions to
+            load live Facebook reactions or Instagram likes from Meta.
+          </Typography>
+
+          <PostHistoryTable
+            data={publishedPosts}
+            status={status}
+            onViewFacebookEngagement={setFacebookEngagementPostId}
+            onViewInstagramEngagement={setInstagramEngagementPostId}
+          />
+        </CardContent>
+      </Card>
+
+      <FacebookEngagementDialog
+        open={facebookEngagementPostId !== null}
+        postId={facebookEngagementPostId}
+        onClose={() => setFacebookEngagementPostId(null)}
+      />
+      <InstagramEngagementDialog
+        open={instagramEngagementPostId !== null}
+        postId={instagramEngagementPostId}
+        onClose={() => setInstagramEngagementPostId(null)}
+      />
+    </ContentLayout>
+>>>>>>> origin/main
   )
 }

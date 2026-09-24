@@ -42,6 +42,10 @@ export type PublishedPost = {
   canFetchInstagramEngagement?: boolean
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 export type ScheduledPost = {
   id: number
   caption: string

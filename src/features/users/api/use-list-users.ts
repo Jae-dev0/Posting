@@ -13,7 +13,10 @@ export const managedUserSchema = z.object({
   fullname: z.string(),
   username: z.string(),
   role: z.enum(['main_admin', 'admin']),
+<<<<<<< HEAD
   companyId: z.number().optional(),
+=======
+>>>>>>> origin/main
   createdAt: z.string(),
 })
 
